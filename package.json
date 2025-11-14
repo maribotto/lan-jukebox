@@ -4,7 +4,7 @@
   "description": "LAN YouTube Jukebox - Share and play YouTube videos at LAN parties",
   "main": "server.js",
   "scripts": {
-    "test": "jest --coverage",
+    "test": "jest --coverage --runInBand",
     "test:watch": "jest --watch",
     "build:win": "pkg server.js --targets node18-win-x64 --output dist/lan-jukebox.exe && cp config.example.json dist/ && cp README-WINDOWS.txt dist/README.txt && cp -r public dist/",
     "build:all": "pkg server.js --targets node18-win-x64,node18-linux-x64,node18-macos-x64 --output dist/lan-jukebox && cp config.example.json dist/ && cp README-WINDOWS.txt dist/README.txt && cp -r public dist/"
