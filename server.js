@@ -268,10 +268,16 @@ app.get('/api/queue', requireAuth, (req, res) => {
 });
 
 // ------ STARTUP ------
-app.listen(PORT, '0.0.0.0', () => {
-    console.log('===========================================================');
-    console.log(`🚀 Jukebox API running at: http://localhost:${PORT}`);
-    console.log(`🔒 Host (player) locked to IP: ${config.hostIp}`);
-    console.log(`Guests can add videos at: http://${config.hostIp}:${PORT}`);
-    console.log('===========================================================');
-});
+// Only start server if this file is run directly (not imported for testing)
+if (require.main === module) {
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log('===========================================================');
+        console.log(`🚀 Jukebox API running at: http://localhost:${PORT}`);
+        console.log(`🔒 Host (player) locked to IP: ${config.hostIp}`);
+        console.log(`Guests can add videos at: http://${config.hostIp}:${PORT}`);
+        console.log('===========================================================');
+    });
+}
+
+// Export for testing
+module.exports = app;
