@@ -1,0 +1,15 @@
+services:
+  jukebox:
+    build: .
+    container_name: lan-jukebox
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./config.json:/app/config.json:ro
+    restart: unless-stopped
+    networks:
+      - default
+
+networks:
+  default:
+    driver: bridge
