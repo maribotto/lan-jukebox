@@ -1,6 +1,6 @@
 {
   "name": "jukebox",
-  "version": "1.10.4",
+  "version": "1.11.0",
   "description": "LAN YouTube Jukebox - Share and play YouTube videos at LAN parties",
   "main": "server.js",
   "scripts": {
