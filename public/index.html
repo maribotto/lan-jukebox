@@ -45,7 +45,10 @@
     </style>
 </head>
 <body>
-    <h1>🎬 LAN YouTube Jukebox</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h1 style="margin: 0;">🎬 LAN YouTube Jukebox</h1>
+        <button id="logout-btn" class="hidden" style="background: #6c757d; padding: 8px 16px;">Logout</button>
+    </div>
     <p id="status-message">Loading...</p>
 
     <div class="container">
@@ -95,10 +98,30 @@
         const playerContainer = document.getElementById('player-container');
         const guestMessage = document.getElementById('guest-message');
 
-        // ------ 1. CHECK STATUS ON LOAD ------
-        
+        // ------ 1. CHECK AUTH STATUS ON LOAD ------
+
         // This function runs as soon as the page loads
         window.addEventListener('DOMContentLoaded', async () => {
+            // First, check if authentication is required and if user is authenticated
+            try {
+                const authResponse = await fetch('/api/auth-status');
+                const authData = await authResponse.json();
+
+                if (authData.requireLogin && !authData.authenticated) {
+                    // Redirect to login page if not authenticated
+                    window.location.href = '/login.html';
+                    return;
+                }
+
+                // Show logout button if login is required and user is authenticated
+                if (authData.requireLogin && authData.authenticated) {
+                    document.getElementById('logout-btn').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error checking auth status:', error);
+            }
+
+            // Now check if user is host or guest
             try {
                 const response = await fetch('/api/status');
                 const data = await response.json();
@@ -363,6 +386,24 @@
                 return videoId;
             } catch (e) { return null; }
         }
+
+        // ------ LOGOUT HANDLER ------
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/logout', { method: 'POST' });
+                const data = await response.json();
+
+                if (data.success) {
+                    // Redirect to login page after logout
+                    window.location.href = '/login.html';
+                } else {
+                    alert('Logout failed: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                alert('Logout failed. Please try again.');
+            }
+        });
     </script>
 </body>
 </html>

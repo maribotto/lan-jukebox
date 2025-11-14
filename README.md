@@ -140,9 +140,42 @@ docker run -d -p 3000:3000 -v $(pwd)/config.json:/app/config.json:ro kaanders/la
 
 - `hostIp`: IP address of the host machine that controls playback
 - `trustProxy` (optional): Set to `true` when using a reverse proxy like Caddy or Nginx. Default: `false`
+- `requireLogin` (optional): Set to `true` to require authentication. Default: `false`
+- `username` (optional): Username for login. Only used if `requireLogin` is `true`
+- `passwordHash` (optional): Bcrypt hash of the password. Only used if `requireLogin` is `true`
+- `sessionSecret` (optional): Secret key for session encryption. Auto-generated if not provided
 
 > [!NOTE]
 > The default port is 3000. To change the port, modify the `PORT` variable in `server.js`.
+
+### Login Authentication
+
+Enable login authentication to protect your jukebox when exposed to the internet:
+
+**1. Generate a password hash:**
+```bash
+node generate-password.js yourSecurePassword123
+```
+
+**2. Update config.json:**
+```json
+{
+  "hostIp": "192.168.1.100",
+  "trustProxy": false,
+  "requireLogin": true,
+  "username": "admin",
+  "passwordHash": "$2b$10$...",
+  "sessionSecret": "your-random-secret-key"
+}
+```
+
+**3. Default credentials (for testing):**
+- Username: `admin`
+- Password: `admin`
+- Hash in `config.example.json`
+
+> [!WARNING]
+> Always change the default password in production! Use `generate-password.js` to create a secure password hash.
 
 ### Using with Reverse Proxy (Caddy)
 
@@ -157,9 +190,15 @@ To expose the jukebox to the internet with HTTPS:
    ```json
    {
      "hostIp": "YOUR_PUBLIC_IP_OR_DOMAIN",
-     "trustProxy": true
+     "trustProxy": true,
+     "requireLogin": true,
+     "username": "admin",
+     "passwordHash": "$2b$10$...",
+     "sessionSecret": "your-random-secret-key"
    }
    ```
+
+   > Use `generate-password.js` to create your password hash
 
 3. **Create Caddyfile** (see `Caddyfile.example`)
    ```

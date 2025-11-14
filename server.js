@@ -1,7 +1,9 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
-const fetch = require('node-fetch'); // NEW: Import fetch
+const fetch = require('node-fetch');
+const session = require('express-session');
+const bcrypt = require('bcrypt');
 const app = express();
 const PORT = 3000;
 
@@ -38,29 +40,115 @@ let queue = [];
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// --- SESSION CONFIGURATION ---
+if (config.requireLogin === true) {
+    app.use(session({
+        secret: config.sessionSecret || 'lan-jukebox-secret-' + Math.random().toString(36),
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+            secure: config.trustProxy === true, // Use secure cookies with HTTPS
+            httpOnly: true,
+            maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        }
+    }));
+    console.log('🔐 Login authentication enabled');
+} else {
+    console.log('✓ Login authentication disabled (open access)');
+}
+// ------------------------------
+
 app.use(express.static(path.join(__dirname, 'public')));
+
+// --- HELPER FUNCTION: Auth Check ---
+// Middleware to check if user is authenticated (if login is required)
+function requireAuth(req, res, next) {
+    if (config.requireLogin === true) {
+        if (!req.session || !req.session.authenticated) {
+            return res.status(401).json({ message: 'Authentication required' });
+        }
+    }
+    next();
+}
 
 // --- HELPER FUNCTION: IP Check ---
 // Checks if the request sender is the allowed "host"
 function isHost(req) {
     let clientIp = req.ip;
-    
+
     // Handles IPv6-formatted IPv4 addresses (e.g., ::ffff:192.168.1.10)
     if (clientIp.startsWith('::ffff:')) {
         clientIp = clientIp.substring(7);
     }
-    
+
     // Allow both localhost (for testing) and the configured host IP
     const allowedIps = ['127.0.0.1', '::1', config.hostIp];
-    
+
     return allowedIps.includes(clientIp);
 }
 
 
 // ------ API ROUTES ------
 
+// LOGIN ROUTE
+app.post('/api/login', async (req, res) => {
+    if (config.requireLogin !== true) {
+        return res.status(400).json({ success: false, message: 'Login is not enabled' });
+    }
+
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+        return res.status(400).json({ success: false, message: 'Username and password required' });
+    }
+
+    // Check username
+    if (username !== config.username) {
+        return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    // Check password
+    const match = await bcrypt.compare(password, config.passwordHash);
+    if (!match) {
+        return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    // Set session
+    req.session.authenticated = true;
+    req.session.username = username;
+
+    console.log(`✓ User logged in: ${username}`);
+    res.json({ success: true, message: 'Login successful' });
+});
+
+// LOGOUT ROUTE
+app.post('/api/logout', (req, res) => {
+    if (req.session) {
+        const username = req.session.username || 'unknown';
+        req.session.destroy((err) => {
+            if (err) {
+                console.error('Error destroying session:', err);
+                return res.status(500).json({ success: false, message: 'Logout failed' });
+            }
+            console.log(`✓ User logged out: ${username}`);
+            res.json({ success: true, message: 'Logged out successfully' });
+        });
+    } else {
+        res.json({ success: true, message: 'Already logged out' });
+    }
+});
+
+// CHECK AUTH STATUS
+app.get('/api/auth-status', (req, res) => {
+    res.json({
+        requireLogin: config.requireLogin === true,
+        authenticated: req.session && req.session.authenticated === true
+    });
+});
+
 // NEW ROUTE: Tells the browser if it's "host" or "guest"
-app.get('/api/status', (req, res) => {
+app.get('/api/status', requireAuth, (req, res) => {
     res.json({
         isHost: isHost(req),
         yourIp: req.ip // Sending the user's IP for info
@@ -68,7 +156,7 @@ app.get('/api/status', (req, res) => {
 });
 
 // MODIFIED: Now fetches the video title and validates embeddability
-app.post('/api/add', async (req, res) => { // Changed to async function
+app.post('/api/add', requireAuth, async (req, res) => { // Changed to async function
     const { videoUrl } = req.body;
 
     if (!videoUrl || !(videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be'))) {
@@ -124,7 +212,7 @@ app.post('/api/add', async (req, res) => { // Changed to async function
 });
 
 // Get next video (HOST ONLY)
-app.post('/api/next', (req, res) => {
+app.post('/api/next', requireAuth, (req, res) => {
     if (!isHost(req)) {
         return res.status(403).json({ message: 'Only the host machine can control playback.' });
     }
@@ -139,7 +227,7 @@ app.post('/api/next', (req, res) => {
 });
 
 // NEW ROUTE: Delete a specific video from queue (HOST ONLY)
-app.post('/api/delete', (req, res) => {
+app.post('/api/delete', requireAuth, (req, res) => {
     if (!isHost(req)) {
         return res.status(403).json({ message: 'Only the host machine can delete videos.' });
     }
@@ -158,7 +246,7 @@ app.post('/api/delete', (req, res) => {
 });
 
 // Get current queue (for all)
-app.get('/api/queue', (req, res) => {
+app.get('/api/queue', requireAuth, (req, res) => {
     res.json(queue);
 });
 

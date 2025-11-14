@@ -1,4 +1,7 @@
 {
   "hostIp": "192.168.1.100",
-  "trustProxy": false
+  "trustProxy": false,
+  "requireLogin": false,
+  "username": "admin",
+  "passwordHash": "$2b$10$i8MpBfuwVT6lNZN5Dunq9eZ1jyhmg9MeMczgT5SA2hHaVGgG77g8S"
 }

@@ -21,6 +21,10 @@ Example config.json:
 - hostIp: Replace "192.168.1.100" with your actual host machine's IP address
 - trustProxy: Set to true ONLY when using a reverse proxy (Caddy/Nginx).
   WARNING: Enabling this without a proxy is a security risk!
+- requireLogin: Set to true to enable login authentication (recommended for internet use)
+- username: Login username (only used if requireLogin is true)
+- passwordHash: Bcrypt password hash (default password is "admin")
+  Use generate-password.js to create your own secure password hash!
 
 Finding Your IP Address:
 -------------------------
