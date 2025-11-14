@@ -82,6 +82,8 @@
         let queue = [];
         let isPlayerReady = false;
         let isHostGlobal = false; // NEW: Stores if we are the host
+        let playbackTimeout = null; // Timeout for auto-skip if video doesn't start
+        let isCurrentlyPlaying = false; // Track if a video is currently playing
 
         const startButton = document.getElementById('start-button');
         const skipButton = document.getElementById('skip-button'); // NEW
@@ -153,14 +155,45 @@
 
         function onPlayerStateChange(event) {
             if (event.data == YT.PlayerState.ENDED) {
+                clearTimeout(playbackTimeout); // Clear timeout when video ends normally
+                isCurrentlyPlaying = false;
                 playNextVideo();
+            } else if (event.data == YT.PlayerState.PLAYING) {
+                clearTimeout(playbackTimeout); // Clear timeout when video starts playing
+                isCurrentlyPlaying = true;
+            } else if (event.data == YT.PlayerState.PAUSED || event.data == YT.PlayerState.UNSTARTED) {
+                isCurrentlyPlaying = false;
             }
         }
 
-        function onPlayerError(event) {
+        async function onPlayerError(event) {
+            clearTimeout(playbackTimeout); // Clear timeout on error
             console.error('Player error:', event.data);
-            currentVideoTitle.textContent = `Error (${event.data}). Skipping...`;
-            setTimeout(playNextVideo, 2000);
+
+            // YouTube error codes explained
+            const errorMessages = {
+                2: 'Invalid video ID',
+                5: 'HTML5 player error',
+                100: 'Video not found or private',
+                101: 'Video embedding not allowed by owner',
+                150: 'Video embedding not allowed by owner'
+            };
+
+            const errorMsg = errorMessages[event.data] || 'Unknown error';
+            currentVideoTitle.textContent = `❌ Error ${event.data}: ${errorMsg}. Skipping in 3s...`;
+
+            // Check if there are more videos in queue before retrying
+            setTimeout(async () => {
+                const queueResponse = await fetch('/api/queue');
+                const queueData = await queueResponse.json();
+                if (queueData.length > 0) {
+                    playNextVideo();
+                } else {
+                    currentVideoTitle.textContent = `❌ Error ${event.data}: ${errorMsg}. Queue is empty.`;
+                    isCurrentlyPlaying = false;
+                    player.stopVideo();
+                }
+            }, 3000);
         }
 
         // ------ 3. QUEUE MANAGEMENT ------
@@ -168,6 +201,10 @@
         async function playNextVideo() {
             // This function only runs on the host machine
             if (!isPlayerReady) return;
+
+            // Clear any existing timeout
+            clearTimeout(playbackTimeout);
+
             try {
                 // Requesting next video. Server will block if not host.
                 const response = await fetch('/api/next', { method: 'POST' });
@@ -181,13 +218,31 @@
                     if (videoId) {
                         player.loadVideoById(videoId);
                         currentVideoTitle.textContent = `Now playing: ${data.nextVideo.title || videoId}`;
+
+                        // Set timeout: if video doesn't start playing in 10 seconds, skip it
+                        playbackTimeout = setTimeout(async () => {
+                            console.warn('Video failed to start within 10 seconds. Auto-skipping...');
+                            currentVideoTitle.textContent = `⏭️ Video timed out (didn't start). Skipping...`;
+
+                            // Check if there are more videos in queue before retrying
+                            await new Promise(resolve => setTimeout(resolve, 2000));
+                            const queueResponse = await fetch('/api/queue');
+                            const queueData = await queueResponse.json();
+                            if (queueData.length > 0) {
+                                playNextVideo();
+                            } else {
+                                currentVideoTitle.textContent = `⏭️ Video timed out. Queue is empty.`;
+                                isCurrentlyPlaying = false;
+                                player.stopVideo();
+                            }
+                        }, 10000);
                     } else {
                         playNextVideo(); // Skipping invalid link
                     }
                 } else {
                     currentVideoTitle.textContent = 'Queue is empty. Add more videos!';
+                    isCurrentlyPlaying = false;
                     player.stopVideo();
-                    player.loadVideoById(''); // Clear the player
                 }
             } catch (error) { console.error('Error fetching next video:', error); }
             updateQueueList();
@@ -225,19 +280,26 @@
                     body: JSON.stringify({ videoUrl: videoUrl })
                 });
 
+                const data = await response.json();
+
                 if (!response.ok) {
-                    alert('Failed to add video. Check the URL.');
+                    alert(`❌ Failed to add video:\n${data.message || 'Check the URL.'}`);
+                    addForm.querySelector('button').textContent = originalText;
+                    return;
+                }
+
+                // Show warning if embed check didn't pass
+                if (data.message && data.message.includes('warning')) {
+                    console.warn(data.message);
                 }
 
                 addForm.querySelector('button').textContent = originalText;
                 urlInput.value = '';
-                
-                // If we are host and the player is stopped...
-                if (isHostGlobal && player) {
-                    const playerState = player.getPlayerState();
-                    if (isPlayerReady && (playerState === YT.PlayerState.UNSTARTED || playerState === YT.PlayerState.ENDED || playerState === -1)) {
-                        playNextVideo();
-                    }
+
+                // If we are host and nothing is currently playing, start playback
+                if (isHostGlobal && isPlayerReady && !isCurrentlyPlaying) {
+                    console.log('Auto-starting playback because queue was empty');
+                    playNextVideo();
                 }
                 updateQueueList(); // Update list for everyone immediately
             } catch (error) {

@@ -56,26 +56,37 @@ app.get('/api/status', (req, res) => {
     });
 });
 
-// MODIFIED: Now fetches the video title
+// MODIFIED: Now fetches the video title and validates embeddability
 app.post('/api/add', async (req, res) => { // Changed to async function
     const { videoUrl } = req.body;
 
     if (!videoUrl || !(videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be'))) {
-        return res.status(400).json({ success: false, message: 'Invalid URL' });
+        return res.status(400).json({ success: false, message: 'Invalid URL - must be a YouTube link' });
     }
 
     let title = 'Untitled video';
+    let embedCheckPassed = false;
 
     // NEW: Try to fetch video title from YouTube's oEmbed API
+    // oEmbed will fail (4xx) if video is private, deleted, or embed-disabled
     try {
         const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(videoUrl)}&format=json`;
         const oembedRes = await fetch(oembedUrl);
-        
+
         if (oembedRes.ok) {
             const oembedData = await oembedRes.json();
             title = oembedData.title; // Fetched title!
+            embedCheckPassed = true;
+        } else if (oembedRes.status === 401 || oembedRes.status === 404) {
+            // Video not embeddable or not found
+            console.warn(`Video not embeddable or unavailable: ${videoUrl} (status ${oembedRes.status})`);
+            return res.status(400).json({
+                success: false,
+                message: 'Video is private, deleted, or embedding is disabled by the owner'
+            });
         } else {
-            // If oEmbed fails, use old fallback logic
+            // Other errors - try fallback
+            console.warn(`oEmbed returned ${oembedRes.status}, trying fallback`);
             const urlObj = new URL(videoUrl);
             if (urlObj.hostname.includes('youtu.be')) {
                 title = urlObj.pathname.slice(1);
@@ -85,13 +96,20 @@ app.post('/api/add', async (req, res) => { // Changed to async function
         }
     } catch (e) {
         console.error('oEmbed fetch failed:', e.message);
+        // Still allow adding, but with fallback title
         title = videoUrl.split('v=')[1] || 'ID parsed from URL';
     }
-    
+
     const videoObject = { url: videoUrl, title: title };
     queue.push(videoObject);
     console.log(`Added to queue (requester: ${req.ip}): ${title}`);
-    res.status(201).json({ success: true, message: 'Video added', video: videoObject });
+
+    // Warn user if embed check didn't pass
+    const message = embedCheckPassed
+        ? 'Video added successfully'
+        : 'Video added (warning: could not verify if embedding is allowed)';
+
+    res.status(201).json({ success: true, message: message, video: videoObject });
 });
 
 // Get next video (HOST ONLY)
