@@ -2,6 +2,9 @@
 
 A web application that allows LAN party guests to add YouTube videos to a shared playback queue. The host machine (identified by IP address) automatically plays the videos in sequence.
 
+- Utilizes [node.js](https://nodejs.org) (`npm` and `node` commands)
+- Install easily using [Docker](https://www.docker.com/)
+
 ![LAN Jukebox Screenshot](images/screenshot.jpg)
 
 [![Docker Hub](https://img.shields.io/docker/pulls/kaanders/lan-jukebox?logo=docker)](https://hub.docker.com/r/kaanders/lan-jukebox)
@@ -16,6 +19,23 @@ A web application that allows LAN party guests to add YouTube videos to a shared
 - 📱 **Responsive design** - Works on mobile devices
 
 ## 🚀 Quick Start
+
+### How to figure out your LAN IP address
+
+  **Windows**:
+  ```
+  ipconfig
+  ```
+
+  **Linux**:
+  ```
+  ip addr show
+  ```
+
+  **Mac**:
+  ```
+  ifconfig | grep "inet"
+  ```
 
 ### Docker Hub (Easiest)
 
