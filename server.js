@@ -8,9 +8,16 @@ const app = express();
 const PORT = 3000;
 
 // --- LOAD CONFIGURATION ---
+// Detect if running as pkg executable
+// When packaged with pkg, __dirname points to the snapshot filesystem
+// We need to read config.json from the executable's directory instead
+const configDir = process.pkg ? path.dirname(process.execPath) : __dirname;
+const configPath = path.join(configDir, 'config.json');
+
 let config;
 try {
-    const configData = fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8');
+    console.log(`Loading config from: ${configPath}`);
+    const configData = fs.readFileSync(configPath, 'utf8');
     config = JSON.parse(configData);
     if (!config.hostIp) {
         throw new Error('config.json is missing "hostIp"');
@@ -18,6 +25,7 @@ try {
 } catch (error) {
     console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
     console.error('ERROR: Could not load config.json.');
+    console.error(`Expected location: ${configPath}`);
     console.error('Ensure the file exists and contains: { "hostIp": "YOUR_IP_HERE" }');
     console.error(error.message);
     console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
