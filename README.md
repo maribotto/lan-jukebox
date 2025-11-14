@@ -29,8 +29,8 @@ A web application that allows LAN party guests to add YouTube videos to a shared
    ```
 
 3. **Open in browser**
-   - Host: \`http://localhost:3000\`
-   - Guests: \`http://<host-ip>:3000\`
+   - Host: `http://localhost:3000`
+   - Guests: `http://YOUR-HOST-IP:3000`
 
 4. **Stop the container**
    ```
