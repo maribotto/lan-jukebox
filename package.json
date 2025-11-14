@@ -1,7 +1,7 @@
 {
   "name": "jukebox",
-  "version": "1.0.0",
-  "description": "",
+  "version": "1.10.0",
+  "description": "LAN YouTube Jukebox - Share and play YouTube videos at LAN parties",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
