@@ -4,6 +4,8 @@ A web application that allows LAN party guests to add YouTube videos to a shared
 
 ![LAN Jukebox Screenshot](images/screenshot.jpg)
 
+[![Docker Hub](https://img.shields.io/docker/pulls/kaanders/lan-jukebox?logo=docker)](https://hub.docker.com/r/kaanders/lan-jukebox)
+
 ## ✨ Features
 
 - 🎵 **Automatic playback** - Host machine plays videos in order
@@ -15,7 +17,16 @@ A web application that allows LAN party guests to add YouTube videos to a shared
 
 ## 🚀 Quick Start
 
-### Docker (Recommended)
+### Docker Hub (Easiest)
+
+Pull and run the pre-built image directly from Docker Hub:
+
+```
+docker pull kaanders/lan-jukebox:latest
+docker run -d -p 3000:3000 -v $(pwd)/config.json:/app/config.json:ro kaanders/lan-jukebox:latest
+```
+
+### Docker Compose (Recommended)
 
 1. **Create config.json**
    ```
