@@ -2,7 +2,7 @@
 
 A web application that allows LAN party guests to add YouTube videos to a shared playback queue. The host machine (identified by IP address) automatically plays the videos in sequence.
 
-![LAN Jukebox Screenshot](images/screenshot.png)
+![LAN Jukebox Screenshot](images/screenshot.jpg)
 
 ## ✨ Features
 
@@ -18,59 +18,63 @@ A web application that allows LAN party guests to add YouTube videos to a shared
 ### Docker (Recommended)
 
 1. **Create config.json**
-   \`\`\`
+   ```
    echo '{"hostIp":"192.168.1.100"}' > config.json
-   \`\`\`
+   ```
    Replace the IP with your host machine's IP address.
 
 2. **Start the container**
-   \`\`\`
+   ```
    docker compose up -d
-   \`\`\`
+   ```
 
 3. **Open in browser**
    - Host: \`http://localhost:3000\`
    - Guests: \`http://<host-ip>:3000\`
 
 4. **Stop the container**
-   \`\`\`
+   ```
    docker compose down
-   \`\`\`
+   ```
 
 #### Docker CLI (without compose)
 
-\`\`\`
 # Build image
+```
 docker build -t lan-jukebox .
+```
 
 # Run container
+```
 docker run -d \\
   -p 3000:3000 \\
   -v \$(pwd)/config.json:/app/config.json:ro \\
   --name lan-jukebox \\
   lan-jukebox
+```
 
 # Stop
+```
 docker stop lan-jukebox
 docker rm lan-jukebox
-\`\`\`
+```
 
 ### Traditional Node.js Setup
 
 1. **Install dependencies**
-   \`\`\`
+   ```
    npm install
-   \`\`\`
+   ```
 
 2. **Create config.json**
-   \`\`\`
+   ```
    {"hostIp":"192.168.1.100"}
-   \`\`\`
+   ```
 
 3. **Start the server**
-   \`\`\`
+   ```
    node server.js
-   \`\`\`
+   ```
 
 ## 🎮 Usage
 
@@ -96,11 +100,11 @@ docker rm lan-jukebox
 ## 🔧 Configuration
 
 **config.json**:
-\`\`\`
+```
 {
   "hostIp": "192.168.50.200"
 }
-\`\`\`
+```
 
 - \`hostIp\`: IP address of the host machine that controls playback
 
