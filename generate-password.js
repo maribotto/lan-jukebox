@@ -8,7 +8,7 @@
  * This script generates a bcrypt hash that can be used in config.json
  */
 
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 const password = process.argv[2];
 

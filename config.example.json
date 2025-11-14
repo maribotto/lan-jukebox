@@ -3,5 +3,5 @@
   "trustProxy": false,
   "requireLogin": false,
   "username": "admin",
-  "passwordHash": "$2b$10$i8MpBfuwVT6lNZN5Dunq9eZ1jyhmg9MeMczgT5SA2hHaVGgG77g8S"
+  "passwordHash": "$2a$10$N9qo8uLOickgx2ZMRZoMye7FvYX9do.qyXkL0RqLbH0.vb5p8LLpm"
 }
