@@ -51,9 +51,9 @@ docker run -d -p 3000:3000 -v $(pwd)/config.json:/app/config.json:ro maribotto/l
 
 1. **Create config.json**
    ```
-   echo '{"hostIp":"192.168.1.100"}' > config.json
+   cp config.example.json config.json
    ```
-   Replace the IP with your host machine's IP address.
+   Then edit `config.json` and replace the IP with your host machine's IP address.
 
 2. **Start the container**
    ```
@@ -100,8 +100,9 @@ docker run -d -p 3000:3000 -v $(pwd)/config.json:/app/config.json:ro maribotto/l
 
 2. **Create config.json**
    ```
-   {"hostIp":"192.168.1.100"}
+   cp config.example.json config.json
    ```
+   Then edit `config.json` with your host machine's IP address.
 
 3. **Start the server**
    ```
