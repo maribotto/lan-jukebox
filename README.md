@@ -139,9 +139,47 @@ docker run -d -p 3000:3000 -v $(pwd)/config.json:/app/config.json:ro kaanders/la
 ```
 
 - `hostIp`: IP address of the host machine that controls playback
+- `trustProxy` (optional): Set to `true` when using a reverse proxy like Caddy or Nginx. Default: `false`
 
 > [!NOTE]
 > The default port is 3000. To change the port, modify the `PORT` variable in `server.js`.
+
+### Using with Reverse Proxy (Caddy)
+
+To expose the jukebox to the internet with HTTPS:
+
+1. **Install Caddy** on your server
+   ```
+   https://caddyserver.com/docs/install
+   ```
+
+2. **Update config.json**
+   ```json
+   {
+     "hostIp": "YOUR_PUBLIC_IP_OR_DOMAIN",
+     "trustProxy": true
+   }
+   ```
+
+3. **Create Caddyfile** (see `Caddyfile.example`)
+   ```
+   yourdomain.com {
+       reverse_proxy localhost:3000
+   }
+   ```
+
+4. **Start Caddy**
+   ```
+   caddy run
+   ```
+
+Caddy automatically:
+- Obtains SSL certificates from Let's Encrypt
+- Redirects HTTP to HTTPS
+- Forwards client IP addresses to the app
+
+> [!WARNING]
+> Only enable `trustProxy: true` when using a reverse proxy. Enabling it without a proxy is a **security risk** as clients can spoof their IP addresses.
 
 ## 🐛 Troubleshooting
 

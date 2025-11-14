@@ -23,6 +23,17 @@ try {
 }
 // ------------------------------
 
+// --- TRUST PROXY CONFIGURATION ---
+// Enable this when using a reverse proxy (e.g., Caddy, Nginx)
+// This allows Express to read X-Forwarded-For headers
+if (config.trustProxy === true) {
+    app.set('trust proxy', true);
+    console.log('⚠️  Trust proxy enabled - suitable for reverse proxy setups');
+} else {
+    console.log('✓ Trust proxy disabled - suitable for direct LAN usage');
+}
+// ------------------------------
+
 let queue = [];
 
 app.use(express.json());
