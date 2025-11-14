@@ -1,16 +1,25 @@
 LAN YouTube Jukebox - Windows Executable
 =========================================
 
+Required Files:
+---------------
+Extract all files to the same directory:
+- lan-jukebox.exe (the application)
+- public/ (folder with web interface files)
+- config.json (your configuration - rename from config.example.json)
+
 Quick Start:
 ------------
 1. Copy config.example.json to config.json
 2. Edit config.json and set your host machine's IP address
-3. Run lan-jukebox.exe
-4. Open http://localhost:3000 in your browser
+3. Make sure public/ folder is in the same directory as lan-jukebox.exe
+4. Run lan-jukebox.exe
+5. Open http://localhost:3000 in your browser
 
 Configuration:
 --------------
 The config.json file must be in the same directory as lan-jukebox.exe
+The public/ folder must also be in the same directory as lan-jukebox.exe
 
 Example config.json:
 {

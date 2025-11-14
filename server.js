@@ -67,7 +67,12 @@ if (config.requireLogin === true) {
 }
 // ------------------------------
 
-app.use(express.static(path.join(__dirname, 'public')));
+// --- STATIC FILES CONFIGURATION ---
+// Serve static files from the public directory
+// When packaged with pkg, serve from the executable's directory
+const publicDir = process.pkg ? path.join(path.dirname(process.execPath), 'public') : path.join(__dirname, 'public');
+console.log(`Serving static files from: ${publicDir}`);
+app.use(express.static(publicDir));
 
 // --- HELPER FUNCTION: Auth Check ---
 // Middleware to check if user is authenticated (if login is required)
