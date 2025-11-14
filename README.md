@@ -39,7 +39,7 @@ A web application that allows LAN party guests to add YouTube videos to a shared
 
 ### Docker Hub (Easiest)
 
-Pull and run the pre-built image directly from Docker Hub:
+Pull and run the pre-built image directly from [Docker Hub](https://hub.docker.com/r/kaanders/lan-jukebox):
 
 ```
 docker pull kaanders/lan-jukebox:latest
