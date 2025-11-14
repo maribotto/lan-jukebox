@@ -8,6 +8,7 @@ A web application that allows LAN party guests to add YouTube videos to a shared
 
 ![LAN Jukebox Screenshot](images/screenshot.jpg)
 
+[![Tests](https://github.com/maribotto/lan-jukebox/actions/workflows/test.yml/badge.svg)](https://github.com/maribotto/lan-jukebox/actions/workflows/test.yml)
 [![Docker Hub](https://img.shields.io/docker/pulls/maribotto/lan-jukebox?logo=docker)](https://hub.docker.com/r/maribotto/lan-jukebox)
 
 ## ✨ Features
