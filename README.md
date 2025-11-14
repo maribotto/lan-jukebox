@@ -134,19 +134,18 @@ docker run -d -p 3000:3000 -v $(pwd)/config.json:/app/config.json:ro kaanders/la
 **config.json**:
 ```
 {
-  "hostIp": "192.168.50.200"
+  "hostIp": "192.168.50.200",
+  "port": 3000
 }
 ```
 
 - `hostIp`: IP address of the host machine that controls playback
+- `port` (optional): Port number for the server. Default: `3000`
 - `trustProxy` (optional): Set to `true` when using a reverse proxy like Caddy or Nginx. Default: `false`
 - `requireLogin` (optional): Set to `true` to require authentication. Default: `false`
 - `username` (optional): Username for login. Only used if `requireLogin` is `true`
 - `passwordHash` (optional): Bcrypt hash of the password. Only used if `requireLogin` is `true`
 - `sessionSecret` (optional): Secret key for session encryption. Auto-generated if not provided
-
-> [!NOTE]
-> The default port is 3000. To change the port, modify the `PORT` variable in `server.js`.
 
 ### Login Authentication
 
@@ -158,7 +157,7 @@ node generate-password.js yourSecurePassword123
 ```
 
 **2. Update config.json:**
-```json
+```
 {
   "hostIp": "192.168.1.100",
   "trustProxy": false,
@@ -187,7 +186,7 @@ To expose the jukebox to the internet with HTTPS:
    ```
 
 2. **Update config.json**
-   ```json
+   ```
    {
      "hostIp": "YOUR_PUBLIC_IP_OR_DOMAIN",
      "trustProxy": true,

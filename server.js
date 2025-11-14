@@ -5,7 +5,6 @@ const fetch = require('node-fetch');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
 const app = express();
-const PORT = 3000;
 
 // --- LOAD CONFIGURATION ---
 // Detect if running as pkg executable
@@ -31,6 +30,11 @@ try {
     console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
     process.exit(1); // Stop the server because config is missing
 }
+// ------------------------------
+
+// --- PORT CONFIGURATION ---
+const PORT = config.port || 3000;
+console.log(`📡 Server will run on port: ${PORT}`);
 // ------------------------------
 
 // --- TRUST PROXY CONFIGURATION ---

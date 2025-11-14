@@ -24,10 +24,12 @@ The public/ folder must also be in the same directory as lan-jukebox.exe
 Example config.json:
 {
   "hostIp": "192.168.1.100",
+  "port": 3000,
   "trustProxy": false
 }
 
 - hostIp: Replace "192.168.1.100" with your actual host machine's IP address
+- port: Port number for the server (default: 3000). Change if 3000 is already in use
 - trustProxy: Set to true ONLY when using a reverse proxy (Caddy/Nginx).
   WARNING: Enabling this without a proxy is a security risk!
 - requireLogin: Set to true to enable login authentication (recommended for internet use)
