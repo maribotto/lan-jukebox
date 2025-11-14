@@ -139,6 +139,8 @@ docker run -d -p 3000:3000 -v $(pwd)/config.json:/app/config.json:ro kaanders/la
 
 - `hostIp`: IP address of the host machine that controls playback
 
+**Note:** The default port is 3000. To change the port, modify the `PORT` variable in `server.js`.
+
 ## 🐛 Troubleshooting
 
 **Videos won't play:**
