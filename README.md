@@ -4,6 +4,7 @@ A web application that allows LAN party guests to add YouTube videos to a shared
 
 - Utilizes [node.js](https://nodejs.org) (`npm` and `node` commands)
 - Install easily using [Docker](https://www.docker.com/)
+- Windows `.exe` provided in the **Releases** section
 
 ![LAN Jukebox Screenshot](images/screenshot.jpg)
 
