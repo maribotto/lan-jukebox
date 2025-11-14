@@ -37,27 +37,27 @@ A web application that allows LAN party guests to add YouTube videos to a shared
    docker compose down
    ```
 
-#### Docker CLI (without compose)
+### Docker CLI (without compose)
 
-# Build image
-```
-docker build -t lan-jukebox .
-```
+1. **Build image**
+   ```
+   docker build -t lan-jukebox .
+   ```
 
-# Run container
-```
-docker run -d \\
-  -p 3000:3000 \\
-  -v \$(pwd)/config.json:/app/config.json:ro \\
-  --name lan-jukebox \\
-  lan-jukebox
-```
+2. **Run container**
+   ```
+   docker run -d \
+     -p 3000:3000 \
+     -v $(pwd)/config.json:/app/config.json:ro \
+     --name lan-jukebox \
+     lan-jukebox
+   ```
 
-# Stop
-```
-docker stop lan-jukebox
-docker rm lan-jukebox
-```
+3. **Stop**
+   ```
+   docker stop lan-jukebox
+   docker rm lan-jukebox
+   ```
 
 ### Traditional Node.js Setup
 
@@ -91,11 +91,11 @@ docker rm lan-jukebox
 
 ## 📝 API Endpoints
 
-- \`GET /api/status\` - Returns whether requester is host or guest
-- \`POST /api/add\` - Add video to queue (all users)
-- \`POST /api/next\` - Get next video (host only)
-- \`POST /api/delete\` - Remove video from queue (host only)
-- \`GET /api/queue\` - Get current queue (all users)
+- `GET /api/status` - Returns whether requester is host or guest
+- `POST /api/add` - Add video to queue (all users)
+- `POST /api/next` - Get next video (host only)
+- `POST /api/delete` - Remove video from queue (host only)
+- `GET /api/queue` - Get current queue (all users)
 
 ## 🔧 Configuration
 
@@ -106,7 +106,7 @@ docker rm lan-jukebox
 }
 ```
 
-- \`hostIp\`: IP address of the host machine that controls playback
+- `hostIp`: IP address of the host machine that controls playback
 
 ## 🐛 Troubleshooting
 
@@ -120,7 +120,7 @@ docker rm lan-jukebox
 - Application blocks these automatically during submission
 
 **Container won't start:**
-- Check if port 3000 is available: \`lsof -i :3000\`
+- Check if port 3000 is available: `lsof -i :3000`
 - Verify config.json exists and is valid JSON
 
 ## 📄 License
