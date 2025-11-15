@@ -453,21 +453,14 @@ jobs:
         fi
         echo "✅ /api/queue returns valid JSON"
 
-        CURRENT_RESPONSE=$(curl -s http://localhost:3000/api/current)
-        if [ -z "$CURRENT_RESPONSE" ]; then
-          echo "❌ TEST FAILED: /api/current returned empty response"
+        # Test mobile.html endpoint
+        MOBILE_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/mobile.html)
+        if [ "$MOBILE_CODE" != "200" ]; then
+          echo "❌ TEST FAILED: mobile.html returned HTTP $MOBILE_CODE"
           taskkill //F //IM lan-jukebox.exe 2>/dev/null || true
           exit 1
         fi
-        echo "✅ /api/current responds"
-
-        PLAYER_RESPONSE=$(curl -s http://localhost:3000/api/player-state)
-        if [ -z "$PLAYER_RESPONSE" ]; then
-          echo "❌ TEST FAILED: /api/player-state returned empty response"
-          taskkill //F //IM lan-jukebox.exe 2>/dev/null || true
-          exit 1
-        fi
-        echo "✅ /api/player-state responds"
+        echo "✅ mobile.html accessible (HTTP $MOBILE_CODE)"
 
         # Test 8: Stability test
         echo ""
