@@ -63,26 +63,15 @@
     </div>
     <p id="status-message" style="position: relative; z-index: 2;">Loading...</p>
 
-    <div class="container">
-        
-        <div class="player-wrapper hidden" id="player-container">
+    <!-- HOST VIEW -->
+    <div class="container hidden" id="host-container">
+        <div class="player-wrapper">
             <button id="start-button">START PLAYER</button>
             <div id="player"></div>
             <h3 id="current-video-title" style="margin-top: 10px; margin-bottom: 8px; font-size: 1.3em;"></h3>
             <a id="current-video-url" href="" target="_blank" style="font-size: 1.05em; color: #007bff; margin: 0; word-break: break-all; display: none; text-decoration: none;"></a>
             <div id="player-spacer"></div>
             <button id="skip-button" class="skip-button hidden">SKIP ⏭️</button>
-        </div>
-
-        <div id="guest-message" class="hidden">
-            <h2>You are a guest</h2>
-            <p>You can see the queue and add videos, but only the "host" machine can play music.</p>
-
-            <div id="guest-now-playing" style="margin-top: 20px; padding: 15px; background: #fff; border-radius: 8px; border: 2px solid #007bff;">
-                <h3 style="margin-top: 0; color: #007bff;">🎵 Currently Playing</h3>
-                <p id="guest-current-title" style="font-size: 1.3em; margin: 10px 0 8px 0;">Nothing is playing</p>
-                <a id="guest-current-url" href="" target="_blank" style="font-size: 1.05em; color: #007bff; margin: 0; word-break: break-all; display: none; text-decoration: none;"></a>
-            </div>
         </div>
 
         <div class="queue-wrapper">
@@ -99,6 +88,33 @@
         </div>
     </div>
 
+    <!-- GUEST VIEW -->
+    <div class="container hidden" id="guest-container">
+        <div id="guest-message">
+            <h2>You are a guest</h2>
+            <p>You can see the queue and add videos, but only the "host" machine can play music.</p>
+
+            <div id="guest-now-playing" style="margin-top: 20px; padding: 15px; background: #fff; border-radius: 8px; border: 2px solid #007bff;">
+                <h3 style="margin-top: 0; color: #007bff;">🎵 Currently Playing</h3>
+                <p id="guest-current-title" style="font-size: 1.3em; margin: 10px 0 8px 0;">Nothing is playing</p>
+                <a id="guest-current-url" href="" target="_blank" style="font-size: 1.05em; color: #007bff; margin: 0; word-break: break-all; display: none; text-decoration: none;"></a>
+            </div>
+        </div>
+
+        <div class="queue-wrapper">
+            <h2>Add Video</h2>
+            <form id="guest-add-form">
+                <input type="text" id="guest-videoUrl" placeholder="YouTube URL..." required>
+                <button type="submit">Add</button>
+            </form>
+            <hr style="margin: 20px 0;">
+            <h2>Queue</h2>
+            <ul id="guest-queue-list">
+                <li>The queue is empty.</li>
+            </ul>
+        </div>
+    </div>
+
     <script>
         // Define variables globally
         let player;
@@ -110,15 +126,18 @@
         let previousQueueLength = 0; // Track previous queue length for auto-start detection
 
         const startButton = document.getElementById('start-button');
-        const skipButton = document.getElementById('skip-button'); // NEW
+        const skipButton = document.getElementById('skip-button');
         const addForm = document.getElementById('add-form');
+        const guestAddForm = document.getElementById('guest-add-form');
         const urlInput = document.getElementById('videoUrl');
+        const guestUrlInput = document.getElementById('guest-videoUrl');
         const queueList = document.getElementById('queue-list');
+        const guestQueueList = document.getElementById('guest-queue-list');
         const currentVideoTitle = document.getElementById('current-video-title');
         const currentVideoUrl = document.getElementById('current-video-url');
         const statusMessage = document.getElementById('status-message');
-        const playerContainer = document.getElementById('player-container');
-        const guestMessage = document.getElementById('guest-message');
+        const hostContainer = document.getElementById('host-container');
+        const guestContainer = document.getElementById('guest-container');
         const guestCurrentUrl = document.getElementById('guest-current-url');
 
         // ------ 1. CHECK AUTH STATUS ON LOAD ------
@@ -151,14 +170,14 @@
 
                 if (data.isHost) {
                     // USER IS HOST
-                    isHostGlobal = true; // NEW
+                    isHostGlobal = true;
                     statusMessage.textContent = 'You are the host. Press Start Player.';
-                    playerContainer.classList.remove('hidden');
+                    hostContainer.classList.remove('hidden');
                     loadYouTubeAPI(); // Load the YouTube API
                 } else {
                     // USER IS GUEST
                     statusMessage.textContent = `You are a guest (IP: ${data.yourIp}). You can add videos to the queue.`;
-                    guestMessage.classList.remove('hidden');
+                    guestContainer.classList.remove('hidden');
                 }
             } catch (error) {
                 console.error('Error fetching status:', error);
@@ -330,17 +349,16 @@
             }
         }
 
-        // Add video (for all)
-        addForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const videoUrl = urlInput.value;
+        // Add video handler function
+        async function handleAddVideo(form, input) {
+            const videoUrl = input.value;
             if (!videoUrl) return;
 
             try {
                 // Show loading indicator
-                const originalText = addForm.querySelector('button').textContent;
-                addForm.querySelector('button').textContent = 'Loading...';
-                
+                const originalText = form.querySelector('button').textContent;
+                form.querySelector('button').textContent = 'Loading...';
+
                 const response = await fetch('/api/add', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -351,7 +369,7 @@
 
                 if (!response.ok) {
                     alert(`❌ Failed to add video:\n${data.message || 'Check the URL.'}`);
-                    addForm.querySelector('button').textContent = originalText;
+                    form.querySelector('button').textContent = originalText;
                     return;
                 }
 
@@ -363,8 +381,8 @@
                     console.log('✅ Video added and verified:', data.video.title);
                 }
 
-                addForm.querySelector('button').textContent = originalText;
-                urlInput.value = '';
+                form.querySelector('button').textContent = originalText;
+                input.value = '';
 
                 // If we are host and nothing is currently playing, start playback
                 if (isHostGlobal && isPlayerReady && !isCurrentlyPlaying) {
@@ -375,8 +393,19 @@
                 }
             } catch (error) {
                 console.error('Error adding video:', error);
-                addForm.querySelector('button').textContent = 'Add';
+                form.querySelector('button').textContent = 'Add';
             }
+        }
+
+        // Add video (for all)
+        addForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await handleAddVideo(addForm, urlInput);
+        });
+
+        guestAddForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await handleAddVideo(guestAddForm, guestUrlInput);
         });
 
         // MODIFIED: Queue list update (now shows delete buttons for host and currently playing for guests)
@@ -418,34 +447,39 @@
                 }
                 previousQueueLength = queue.length;
 
-                queueList.innerHTML = '';
-                if (queue.length === 0) {
-                    queueList.innerHTML = '<li>The queue is empty.</li>';
-                    return;
-                }
-                queue.forEach((video, index) => {
-                    const li = document.createElement('li');
+                // Update both queue lists (host and guest)
+                const lists = isHostGlobal ? [queueList] : [guestQueueList];
 
-                    // The part containing the video title
-                    const titleSpan = document.createElement('span');
-                    titleSpan.textContent = `${index + 1}: ${video.title || video.url}`;
-                    li.appendChild(titleSpan);
-
-                    if (index === 0) {
-                        li.classList.add('now-playing');
-                        titleSpan.textContent = `(Next up) ${video.title || video.url}`;
+                lists.forEach(list => {
+                    list.innerHTML = '';
+                    if (queue.length === 0) {
+                        list.innerHTML = '<li>The queue is empty.</li>';
+                        return;
                     }
+                    queue.forEach((video, index) => {
+                        const li = document.createElement('li');
 
-                    // NEW: Add delete button for host (but not for the "Next up" video)
-                    if (isHostGlobal && index > 0) {
-                        const deleteBtn = document.createElement('button');
-                        deleteBtn.textContent = 'X';
-                        deleteBtn.className = 'delete-btn';
-                        deleteBtn.onclick = () => deleteVideo(index);
-                        li.appendChild(deleteBtn);
-                    }
+                        // The part containing the video title
+                        const titleSpan = document.createElement('span');
+                        titleSpan.textContent = `${index + 1}: ${video.title || video.url}`;
+                        li.appendChild(titleSpan);
 
-                    queueList.appendChild(li);
+                        if (index === 0) {
+                            li.classList.add('now-playing');
+                            titleSpan.textContent = `(Next up) ${video.title || video.url}`;
+                        }
+
+                        // NEW: Add delete button for host (but not for the "Next up" video)
+                        if (isHostGlobal && index > 0) {
+                            const deleteBtn = document.createElement('button');
+                            deleteBtn.textContent = 'X';
+                            deleteBtn.className = 'delete-btn';
+                            deleteBtn.onclick = () => deleteVideo(index);
+                            li.appendChild(deleteBtn);
+                        }
+
+                        list.appendChild(li);
+                    });
                 });
             } catch (error) {
                 console.error('Error updating queue list:', error);
