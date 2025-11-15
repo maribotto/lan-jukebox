@@ -184,8 +184,37 @@ Pull and run the pre-built image directly from [Docker Hub](https://hub.docker.c
 Enable login authentication to protect your jukebox when exposed to the internet:
 
 **1. Generate a password hash:**
+
+Choose one of the following methods:
+
+**Method A: Using Node.js (if installed)**
 ```bash
 node generate-password.js yourSecurePassword123
+```
+
+**Method B: Using standalone executable (Windows/Linux/macOS)**
+
+If you're using the .exe version or don't have Node.js installed, use the standalone password generator:
+
+- **Windows**: `generate-password.exe yourSecurePassword123`
+- **Linux/macOS**: `./generate-password yourSecurePassword123`
+
+The executables are included in the releases or can be built with:
+```bash
+npm run build:password-gen
+```
+
+**Method C: Online bcrypt generator**
+
+Visit: https://bcrypt-generator.com/
+- Enter your password
+- Use cost factor: **10**
+- Copy the generated hash
+
+**Method D: Using Python**
+```bash
+pip install bcrypt
+python -c "import bcrypt; print(bcrypt.hashpw(b'yourPassword', bcrypt.gensalt(rounds=10)).decode())"
 ```
 
 **2. Update config.json:**

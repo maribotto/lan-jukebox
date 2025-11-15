@@ -5,6 +5,7 @@ Required Files:
 ---------------
 Extract all files to the same directory:
 - lan-jukebox.exe (the application)
+- generate-password.exe (password hash generator - optional)
 - public/ (folder with web interface files)
 - config.json (your configuration - rename from config.example.json)
 
@@ -35,7 +36,18 @@ Example config.json:
 - requireLogin: Set to true to enable login authentication (recommended for internet use)
 - username: Login username (only used if requireLogin is true)
 - passwordHash: Bcrypt password hash (default password is "admin")
-  Use generate-password.js to create your own secure password hash!
+
+Generating a Secure Password Hash:
+-----------------------------------
+To create a secure password hash, use the included generate-password.exe:
+
+1. Open Command Prompt in the same directory as generate-password.exe
+2. Run: generate-password.exe yourSecurePassword123
+3. Copy the generated hash
+4. Paste it into config.json as the "passwordHash" value
+
+Alternative: Use an online bcrypt generator at https://bcrypt-generator.com/
+(Make sure to use cost factor 10)
 
 Finding Your IP Address:
 -------------------------

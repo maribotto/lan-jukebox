@@ -13,8 +13,12 @@ const bcrypt = require('bcryptjs');
 const password = process.argv[2];
 
 if (!password) {
-    console.error('Usage: node generate-password.js <your-password>');
-    console.error('Example: node generate-password.js mySecretPassword123');
+    console.error('Usage: generate-password <your-password>');
+    console.error('');
+    console.error('Examples:');
+    console.error('  node generate-password.js mySecretPassword123');
+    console.error('  ./generate-password mySecretPassword123');
+    console.error('  generate-password.exe mySecretPassword123');
     process.exit(1);
 }
 
