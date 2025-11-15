@@ -166,8 +166,15 @@ app.post('/api/login', async (req, res) => {
     req.session.authenticated = true;
     req.session.username = username;
 
-    console.log(`✓ User logged in: ${username}`);
-    res.json({ success: true, message: 'Login successful' });
+    // Save session before responding
+    req.session.save((err) => {
+        if (err) {
+            console.error('Session save error:', err);
+            return res.status(500).json({ success: false, message: 'Session error' });
+        }
+        console.log(`✓ User logged in: ${username}`);
+        res.json({ success: true, message: 'Login successful' });
+    });
 });
 
 // LOGOUT ROUTE
