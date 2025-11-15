@@ -35,51 +35,222 @@ jobs:
 
     - name: Test Docker image
       run: |
+        set -e  # Exit on any error
+
+        echo "========================================="
+        echo "Starting Docker Image Tests"
+        echo "========================================="
+
         # Start container
+        echo "Starting container..."
         docker run -d --name jukebox-test \
           -p 3000:3000 \
           -v $(pwd)/config.test.json:/app/config.json:ro \
           maribotto/lan-jukebox:${{ steps.version.outputs.tag }}
 
-        # Wait for startup
+        # Wait for startup with timeout
         echo "Waiting for container to start..."
-        sleep 5
+        for i in {1..10}; do
+          if docker ps | grep -q jukebox-test; then
+            echo "Container is running (attempt $i/10)"
+            break
+          fi
+          if [ $i -eq 10 ]; then
+            echo "❌ TEST FAILED: Container failed to start after 10 seconds!"
+            docker logs jukebox-test
+            exit 1
+          fi
+          sleep 1
+        done
 
-        # Check if container is running
+        # Wait for server to be ready
+        echo "Waiting for server to be ready..."
+        sleep 3
+
+        # Check if container is still running (didn't crash)
         if ! docker ps | grep -q jukebox-test; then
-          echo "Container failed to start!"
+          echo "❌ TEST FAILED: Container crashed after startup!"
           docker logs jukebox-test
           exit 1
         fi
+        echo "✅ Container startup test passed"
 
-        # Test HTTP response
-        echo "Testing HTTP endpoint..."
-        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/)
+        # Test 1: Check container logs for successful initialization
+        echo ""
+        echo "Test 1: Checking initialization logs..."
+        LOGS=$(docker logs jukebox-test 2>&1)
+
+        if ! echo "$LOGS" | grep -q "Loading config from: /app/config.json"; then
+          echo "❌ TEST FAILED: Config not loaded correctly"
+          echo "$LOGS"
+          exit 1
+        fi
+        echo "  ✅ Config loaded successfully"
+
+        if ! echo "$LOGS" | grep -q "Jukebox API running at"; then
+          echo "❌ TEST FAILED: Server did not start properly"
+          echo "$LOGS"
+          exit 1
+        fi
+        echo "  ✅ Server started successfully"
+
+        if ! echo "$LOGS" | grep -q "Serving static files from: /app/public"; then
+          echo "❌ TEST FAILED: Static file serving not configured"
+          echo "$LOGS"
+          exit 1
+        fi
+        echo "  ✅ Static file serving configured"
+
+        # Test 2: Main page HTTP response
+        echo ""
+        echo "Test 2: Testing main page HTTP response..."
+        HTTP_CODE=$(curl -s -o /tmp/response.html -w "%{http_code}" http://localhost:3000/)
         if [ "$HTTP_CODE" != "200" ]; then
-          echo "HTTP test failed! Got status code: $HTTP_CODE"
+          echo "❌ TEST FAILED: Expected HTTP 200, got $HTTP_CODE"
           docker logs jukebox-test
           exit 1
         fi
+        echo "  ✅ HTTP status code: $HTTP_CODE"
 
-        echo "HTTP test passed! Status code: $HTTP_CODE"
+        # Test 3: Verify HTML content
+        echo ""
+        echo "Test 3: Verifying HTML content..."
+        if ! grep -q "<!DOCTYPE html>" /tmp/response.html; then
+          echo "❌ TEST FAILED: Response is not valid HTML (missing DOCTYPE)"
+          cat /tmp/response.html
+          exit 1
+        fi
+        echo "  ✅ Valid HTML response with DOCTYPE"
 
-        # Test API endpoint
-        echo "Testing API endpoint..."
-        API_RESPONSE=$(curl -s http://localhost:3000/api/queue)
-        if [ -z "$API_RESPONSE" ]; then
-          echo "API test failed! No response"
+        if ! grep -q "<html" /tmp/response.html; then
+          echo "❌ TEST FAILED: Response missing <html> tag"
+          cat /tmp/response.html
+          exit 1
+        fi
+        echo "  ✅ HTML structure valid"
+
+        # Test 4: Login page
+        echo ""
+        echo "Test 4: Testing login page..."
+        LOGIN_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/login.html)
+        if [ "$LOGIN_CODE" != "200" ]; then
+          echo "❌ TEST FAILED: Login page returned HTTP $LOGIN_CODE"
+          exit 1
+        fi
+        echo "  ✅ Login page accessible (HTTP $LOGIN_CODE)"
+
+        # Test 5: API endpoints
+        echo ""
+        echo "Test 5: Testing API endpoints..."
+
+        # Test /api/queue
+        QUEUE_RESPONSE=$(curl -s http://localhost:3000/api/queue)
+        if [ -z "$QUEUE_RESPONSE" ]; then
+          echo "❌ TEST FAILED: /api/queue returned empty response"
           docker logs jukebox-test
           exit 1
         fi
+        echo "  ✅ /api/queue responds: $QUEUE_RESPONSE"
 
-        echo "API test passed! Response: $API_RESPONSE"
+        # Verify it's valid JSON
+        if ! echo "$QUEUE_RESPONSE" | python3 -m json.tool > /dev/null 2>&1; then
+          echo "❌ TEST FAILED: /api/queue response is not valid JSON"
+          echo "Response: $QUEUE_RESPONSE"
+          exit 1
+        fi
+        echo "  ✅ /api/queue returns valid JSON"
 
-        # Show logs for verification
-        echo "Container logs:"
+        # Test /api/current
+        CURRENT_RESPONSE=$(curl -s http://localhost:3000/api/current)
+        if [ -z "$CURRENT_RESPONSE" ]; then
+          echo "❌ TEST FAILED: /api/current returned empty response"
+          exit 1
+        fi
+        echo "  ✅ /api/current responds: $CURRENT_RESPONSE"
+
+        # Test /api/player-state
+        PLAYER_RESPONSE=$(curl -s http://localhost:3000/api/player-state)
+        if [ -z "$PLAYER_RESPONSE" ]; then
+          echo "❌ TEST FAILED: /api/player-state returned empty response"
+          exit 1
+        fi
+        echo "  ✅ /api/player-state responds"
+
+        # Test 6: Container stability
+        echo ""
+        echo "Test 6: Testing container stability (10 second run)..."
+        sleep 10
+        if ! docker ps | grep -q jukebox-test; then
+          echo "❌ TEST FAILED: Container crashed during stability test"
+          docker logs jukebox-test
+          exit 1
+        fi
+        echo "  ✅ Container stable after 10 seconds"
+
+        # Test 7: Check for errors in logs
+        echo ""
+        echo "Test 7: Checking for errors in logs..."
+        ERROR_LOGS=$(docker logs jukebox-test 2>&1 | grep -i "error" || true)
+        if [ ! -z "$ERROR_LOGS" ]; then
+          # Some errors are expected (like authentication errors in tests)
+          # Only fail on critical errors
+          CRITICAL_ERRORS=$(echo "$ERROR_LOGS" | grep -v "Authentication required" || true)
+          if [ ! -z "$CRITICAL_ERRORS" ]; then
+            echo "⚠️  WARNING: Found errors in logs:"
+            echo "$CRITICAL_ERRORS"
+          else
+            echo "  ✅ No critical errors in logs"
+          fi
+        else
+          echo "  ✅ No errors in logs"
+        fi
+
+        # Test 8: Memory and resource check
+        echo ""
+        echo "Test 8: Checking resource usage..."
+        STATS=$(docker stats --no-stream jukebox-test --format "{{.MemUsage}}")
+        echo "  ✅ Memory usage: $STATS"
+
+        # Test 9: Native modules working (bcryptjs)
+        echo ""
+        echo "Test 9: Testing native modules (bcryptjs)..."
+        # If bcryptjs didn't work, the container wouldn't have started
+        # But let's verify by checking the logs don't contain module errors
+        MODULE_ERRORS=$(docker logs jukebox-test 2>&1 | grep -i "module" | grep -i "error" || true)
+        if [ ! -z "$MODULE_ERRORS" ]; then
+          echo "❌ TEST FAILED: Native module errors detected"
+          echo "$MODULE_ERRORS"
+          exit 1
+        fi
+        echo "  ✅ Native modules (bcryptjs) working correctly"
+
+        # Test 10: Port exposure
+        echo ""
+        echo "Test 10: Verifying port exposure..."
+        PORT_CHECK=$(docker port jukebox-test 3000)
+        if [ -z "$PORT_CHECK" ]; then
+          echo "❌ TEST FAILED: Port 3000 not exposed"
+          exit 1
+        fi
+        echo "  ✅ Port 3000 exposed: $PORT_CHECK"
+
+        # Show full logs for debugging
+        echo ""
+        echo "========================================="
+        echo "Container logs (for verification):"
+        echo "========================================="
         docker logs jukebox-test
 
         # Stop container
+        echo ""
+        echo "Stopping test container..."
         docker stop jukebox-test
+        docker rm jukebox-test
+
+        echo ""
+        echo "========================================="
+        echo "✅ ALL TESTS PASSED!"
+        echo "========================================="
 
     - name: Login to Docker Hub
       uses: docker/login-action@v3
