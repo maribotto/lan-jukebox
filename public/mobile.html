@@ -162,6 +162,12 @@
             cursor: pointer;
         }
 
+        .paste-button {
+            background: #764ba2;
+            padding: 12px;
+            font-size: 0.95em;
+        }
+
         /* QUEUE */
         .queue-list {
             list-style: none;
@@ -208,10 +214,20 @@
         .guest-info {
             background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
             border: 2px solid rgba(255,255,255,0.3);
-            padding: 15px;
+            padding: 10px;
             border-radius: 10px;
             text-align: center;
             margin-bottom: 15px;
+        }
+
+        .guest-info h2 {
+            font-size: 1.1em;
+            margin: 5px 0;
+        }
+
+        .guest-info p {
+            font-size: 0.9em;
+            margin: 5px 0;
         }
 
         .hidden { display: none !important; }
@@ -258,6 +274,7 @@
                 <form id="add-form" class="add-form">
                     <input type="text" id="videoUrl" placeholder="YouTube URL..." required>
                     <button type="submit">Add to Queue</button>
+                    <button type="button" class="paste-button" id="paste-btn">📋 Paste from Clipboard</button>
                 </form>
             </div>
 
@@ -287,6 +304,7 @@
                 <form id="guest-add-form" class="add-form">
                     <input type="text" id="guest-videoUrl" placeholder="YouTube URL..." required>
                     <button type="submit">Add to Queue</button>
+                    <button type="button" class="paste-button" id="guest-paste-btn">📋 Paste from Clipboard</button>
                 </form>
             </div>
 
@@ -495,6 +513,32 @@
         if (document.getElementById('skip-button')) {
             document.getElementById('skip-button').addEventListener('click', () => {
                 if (player) playNext();
+            });
+        }
+
+        // Paste button functionality
+        const pasteBtn = document.getElementById('paste-btn');
+        const guestPasteBtn = document.getElementById('guest-paste-btn');
+
+        if (pasteBtn) {
+            pasteBtn.addEventListener('click', async () => {
+                try {
+                    const text = await navigator.clipboard.readText();
+                    document.getElementById('videoUrl').value = text;
+                } catch (err) {
+                    alert('Failed to read clipboard. Please paste manually.');
+                }
+            });
+        }
+
+        if (guestPasteBtn) {
+            guestPasteBtn.addEventListener('click', async () => {
+                try {
+                    const text = await navigator.clipboard.readText();
+                    document.getElementById('guest-videoUrl').value = text;
+                } catch (err) {
+                    alert('Failed to read clipboard. Please paste manually.');
+                }
             });
         }
 
