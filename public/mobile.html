@@ -330,7 +330,7 @@
             });
 
         function checkPlayerState() {
-            fetch('/api/player-state')
+            fetch('/api/status', {credentials: 'include'})
                 .then(res => res.json())
                 .then(data => {
                     isHost = data.isHost;
