@@ -108,6 +108,23 @@ if (config.requireLogin === true) {
 // When packaged with pkg, serve from the executable's directory
 const publicDir = process.pkg ? path.join(path.dirname(process.execPath), 'public') : path.join(__dirname, 'public');
 console.log(`Serving static files from: ${publicDir}`);
+
+// --- MOBILE DETECTION AND REDIRECT ---
+app.get('/', (req, res, next) => {
+    const userAgent = req.headers['user-agent'] || '';
+    const isMobile = /Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+
+    // Allow explicit desktop override via ?desktop=1
+    const forceDesktop = req.query.desktop === '1';
+
+    if (isMobile && !forceDesktop) {
+        return res.sendFile(path.join(publicDir, 'mobile.html'));
+    }
+
+    // Desktop version
+    return res.sendFile(path.join(publicDir, 'index.html'));
+});
+
 app.use(express.static(publicDir));
 
 // --- HELPER FUNCTION: Auth Check ---
