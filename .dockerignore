@@ -1,8 +1,38 @@
-node_modules
+# Dependencies (installed in container)
+node_modules/
 npm-debug.log
-.git
+
+# Build artifacts
+dist/
+
+# Testing
+__tests__/
+coverage/
+.jest-cache/
+jest.config.js
+
+# Git
+.git/
+.github/
 .gitignore
-README.md
-.dockerignore
+
+# Documentation
+README*.md
+README*.txt
+*.md
+images/
+
+# Docker files
 Dockerfile
-docker-compose.yml
+.dockerignore
+docker-compose*.yml
+
+# Configuration (mounted via volume)
+config.json
+
+# Development
+.claude/
+
+# Caddy
+Caddyfile
+Caddyfile.example
