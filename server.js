@@ -196,6 +196,15 @@ app.post('/api/login', async (req, res) => {
 });
 
 // LOGOUT ROUTE
+// --- CHECK AUTH STATUS ENDPOINT ---
+app.get('/api/check-auth', (req, res) => {
+    res.json({
+        authenticated: req.session && req.session.authenticated === true,
+        requireLogin: config.requireLogin === true,
+        username: req.session?.username || null
+    });
+});
+
 app.post('/api/logout', (req, res) => {
     if (req.session) {
         const username = req.session.username || 'unknown';
