@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Get version from tag
+      id: version
+      run: |
+        # Extract version from tag (e.g., v1.14.0 -> v1.14.0)
+        echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+    - name: Build Docker image
+      run: |
+        docker build -t maribotto/lan-jukebox:${{ steps.version.outputs.tag }} \
+                     -t maribotto/lan-jukebox:latest .
+
+    - name: Create test config
+      run: |
+        cat > config.test.json << 'EOF'
+        {
+          "hostIp": "192.168.1.100",
+          "port": 3000,
+          "requireLogin": false
+        }
+        EOF
+
+    - name: Test Docker image
+      run: |
+        # Start container
+        docker run -d --name jukebox-test \
+          -p 3000:3000 \
+          -v $(pwd)/config.test.json:/app/config.json:ro \
+          maribotto/lan-jukebox:${{ steps.version.outputs.tag }}
+
+        # Wait for startup
+        echo "Waiting for container to start..."
+        sleep 5
+
+        # Check if container is running
+        if ! docker ps | grep -q jukebox-test; then
+          echo "Container failed to start!"
+          docker logs jukebox-test
+          exit 1
+        fi
+
+        # Test HTTP response
+        echo "Testing HTTP endpoint..."
+        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/)
+        if [ "$HTTP_CODE" != "200" ]; then
+          echo "HTTP test failed! Got status code: $HTTP_CODE"
+          docker logs jukebox-test
+          exit 1
+        fi
+
+        echo "HTTP test passed! Status code: $HTTP_CODE"
+
+        # Test API endpoint
+        echo "Testing API endpoint..."
+        API_RESPONSE=$(curl -s http://localhost:3000/api/queue)
+        if [ -z "$API_RESPONSE" ]; then
+          echo "API test failed! No response"
+          docker logs jukebox-test
+          exit 1
+        fi
+
+        echo "API test passed! Response: $API_RESPONSE"
+
+        # Show logs for verification
+        echo "Container logs:"
+        docker logs jukebox-test
+
+        # Stop container
+        docker stop jukebox-test
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: maribotto
+        password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+    - name: Push Docker image
+      run: |
+        docker push maribotto/lan-jukebox:${{ steps.version.outputs.tag }}
+        docker push maribotto/lan-jukebox:latest
+        echo "Successfully pushed maribotto/lan-jukebox:${{ steps.version.outputs.tag }}"
+        echo "Successfully pushed maribotto/lan-jukebox:latest"
