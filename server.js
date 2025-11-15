@@ -91,8 +91,9 @@ if (config.requireLogin === true) {
         resave: false,
         saveUninitialized: false,
         cookie: {
-            secure: config.trustProxy === true, // Use secure cookies with HTTPS
+            secure: false, // Allow cookies over HTTP for LAN usage
             httpOnly: true,
+            sameSite: 'lax', // Allow cookies across same-site requests
             maxAge: 24 * 60 * 60 * 1000 // 24 hours
         }
     }));
