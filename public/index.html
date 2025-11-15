@@ -10,11 +10,10 @@
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 900px; margin: 10px auto; padding: 20px; background-color: #f8f9fa; background-image: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.3) 0%, transparent 50%), url("data:image/svg+xml,%3Csvg width='400' height='400' viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M200 50 Q250 80 240 130 Q230 180 200 200 Q170 180 160 130 Q150 80 200 50 M200 200 Q230 220 240 270 Q250 320 200 350 Q150 320 160 270 Q170 220 200 200 M50 200 Q80 150 130 160 Q180 170 200 200 Q180 230 130 240 Q80 250 50 200 M350 200 Q320 150 270 160 Q220 170 200 200 Q220 230 270 240 Q320 250 350 200 M100 100 Q140 120 120 150 L80 110 Z M300 100 Q260 120 280 150 L320 110 Z M100 300 Q140 280 120 250 L80 290 Z M300 300 Q260 280 280 250 L320 290 Z' stroke='%23000000' stroke-width='2' stroke-opacity='0.08' fill='none'/%3E%3Ccircle cx='200' cy='200' r='15' stroke='%23000000' stroke-width='2' stroke-opacity='0.1' fill='none'/%3E%3Cpath d='M150 80 Q160 100 150 120 M250 80 Q240 100 250 120 M150 280 Q160 300 150 320 M250 280 Q240 300 250 320' stroke='%23000000' stroke-width='2.5' stroke-opacity='0.09' fill='none'/%3E%3C/svg%3E"), linear-gradient(135deg, rgba(248,249,250,0.95) 0%, rgba(212,220,230,0.95) 100%); background-attachment: fixed; min-height: 100vh; position: relative; }
         #particle-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
-        #noise-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; border-radius: 8px; overflow: hidden; }
         .container { position: relative; z-index: 2; }
         .container { display: flex; gap: 30px; align-items: stretch; }
-        .player-wrapper { flex: 3; display: flex; flex-direction: column; position: relative; z-index: 2; }
-        .queue-wrapper { flex: 2; background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #000; position: relative; }
+        .player-wrapper { flex: 3; display: flex; flex-direction: column; }
+        .queue-wrapper { flex: 2; background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #000; }
         #player { aspect-ratio: 16 / 9; width: 100%; background: #000; border-radius: 8px; }
         #player-spacer { flex: 1; background: #000; border-radius: 8px; margin-top: 20px; }
         #start-button { font-size: 1.2em; padding: 20px; width: 100%; cursor: pointer; background: linear-gradient(135deg, #e03858 0%, #e03828 100%); color: white; border: 1px solid #000; border-radius: 8px; font-weight: bold; margin-bottom: 20px; }
@@ -87,15 +86,14 @@
         </div>
 
         <div class="queue-wrapper">
-            <canvas id="noise-overlay"></canvas>
-            <h2 style="position: relative; z-index: 2;">Add Video</h2>
-            <form id="add-form" style="position: relative; z-index: 2;">
+            <h2>Add Video</h2>
+            <form id="add-form">
                 <input type="text" id="videoUrl" placeholder="YouTube URL..." required>
                 <button type="submit">Add</button>
             </form>
-            <hr style="margin: 20px 0; position: relative; z-index: 2;">
-            <h2 style="position: relative; z-index: 2;">Queue</h2>
-            <ul id="queue-list" style="position: relative; z-index: 2;">
+            <hr style="margin: 20px 0;">
+            <h2>Queue</h2>
+            <ul id="queue-list">
                 <li>The queue is empty.</li>
             </ul>
         </div>
@@ -626,129 +624,6 @@
                 requestAnimationFrame(render);
             }
             requestAnimationFrame(render);
-        }
-
-        // WebGL noise overlay for queue wrapper
-        const noiseCanvas = document.getElementById('noise-overlay');
-        const glNoise = noiseCanvas.getContext('webgl') || noiseCanvas.getContext('experimental-webgl');
-        const queueWrapper = document.querySelector('.queue-wrapper');
-
-        if (!glNoise) {
-            console.log('WebGL not supported for noise overlay');
-        } else {
-            function resizeNoiseCanvas() {
-                noiseCanvas.width = queueWrapper.offsetWidth;
-                noiseCanvas.height = queueWrapper.offsetHeight;
-                glNoise.viewport(0, 0, noiseCanvas.width, noiseCanvas.height);
-            }
-            resizeNoiseCanvas();
-            window.addEventListener('resize', resizeNoiseCanvas);
-
-            const noiseVertexShader = `
-                attribute vec2 a_position;
-                void main() {
-                    gl_Position = vec4(a_position, 0.0, 1.0);
-                }
-            `;
-
-            const noiseFragmentShader = `
-                precision mediump float;
-                uniform float u_time;
-                uniform vec2 u_resolution;
-
-                float hash(vec2 p) {
-                    p = fract(p * vec2(123.34, 456.21));
-                    p += dot(p, p + 45.32);
-                    return fract(p.x * p.y);
-                }
-
-                float noise(vec2 p) {
-                    vec2 i = floor(p);
-                    vec2 f = fract(p);
-                    f = f * f * (3.0 - 2.0 * f);
-
-                    float a = hash(i);
-                    float b = hash(i + vec2(1.0, 0.0));
-                    float c = hash(i + vec2(0.0, 1.0));
-                    float d = hash(i + vec2(1.0, 1.0));
-
-                    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
-                }
-
-                float fbm(vec2 p) {
-                    float value = 0.0;
-                    float amplitude = 0.5;
-                    for(int i = 0; i < 6; i++) {
-                        value += amplitude * noise(p);
-                        p = p * 2.0 + u_time * 0.1;
-                        amplitude *= 0.5;
-                    }
-                    return value;
-                }
-
-                void main() {
-                    vec2 uv = gl_FragCoord.xy / u_resolution;
-
-                    vec2 p = uv * 3.0 + u_time * 0.2;
-                    float n = fbm(p);
-
-                    // Flowing gradient effect
-                    float wave = sin(uv.x * 3.0 + u_time * 0.5) * cos(uv.y * 3.0 + u_time * 0.3) * 0.5 + 0.5;
-
-                    // Mix noise with wave
-                    float pattern = mix(n, wave, 0.3);
-
-                    // Blue-tinted colors
-                    vec3 color1 = vec3(0.85, 0.90, 1.0);
-                    vec3 color2 = vec3(0.6, 0.7, 0.95);
-                    vec3 color = mix(color1, color2, pattern);
-
-                    float alpha = pattern * 0.15;
-
-                    gl_FragColor = vec4(color, alpha);
-                }
-            `;
-
-            const noiseVertShader = createShader(glNoise, glNoise.VERTEX_SHADER, noiseVertexShader);
-            const noiseFragShader = createShader(glNoise, glNoise.FRAGMENT_SHADER, noiseFragmentShader);
-
-            const noiseProgram = glNoise.createProgram();
-            glNoise.attachShader(noiseProgram, noiseVertShader);
-            glNoise.attachShader(noiseProgram, noiseFragShader);
-            glNoise.linkProgram(noiseProgram);
-
-            const noisePosAttrLoc = glNoise.getAttribLocation(noiseProgram, 'a_position');
-            const noiseTimeUniformLoc = glNoise.getUniformLocation(noiseProgram, 'u_time');
-            const noiseResUniformLoc = glNoise.getUniformLocation(noiseProgram, 'u_resolution');
-
-            const noisePosBuffer = glNoise.createBuffer();
-            glNoise.bindBuffer(glNoise.ARRAY_BUFFER, noisePosBuffer);
-            glNoise.bufferData(glNoise.ARRAY_BUFFER, new Float32Array([
-                -1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1
-            ]), glNoise.STATIC_DRAW);
-
-            glNoise.enable(glNoise.BLEND);
-            glNoise.blendFunc(glNoise.SRC_ALPHA, glNoise.ONE_MINUS_SRC_ALPHA);
-
-            function renderNoise(time) {
-                time *= 0.001;
-
-                glNoise.clearColor(0, 0, 0, 0);
-                glNoise.clear(glNoise.COLOR_BUFFER_BIT);
-
-                glNoise.useProgram(noiseProgram);
-                glNoise.enableVertexAttribArray(noisePosAttrLoc);
-                glNoise.bindBuffer(glNoise.ARRAY_BUFFER, noisePosBuffer);
-                glNoise.vertexAttribPointer(noisePosAttrLoc, 2, glNoise.FLOAT, false, 0, 0);
-
-                glNoise.uniform1f(noiseTimeUniformLoc, time);
-                glNoise.uniform2f(noiseResUniformLoc, noiseCanvas.width, noiseCanvas.height);
-
-                glNoise.drawArrays(glNoise.TRIANGLES, 0, 6);
-
-                requestAnimationFrame(renderNoise);
-            }
-            requestAnimationFrame(renderNoise);
         }
     </script>
 </body>
