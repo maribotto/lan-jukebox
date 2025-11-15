@@ -52,10 +52,17 @@ Add YouTube videos to your LAN Jukebox directly from the YouTube website:
 
 Pull and run the pre-built image directly from [Docker Hub](https://hub.docker.com/r/maribotto/lan-jukebox):
 
-```
-docker pull maribotto/lan-jukebox:latest
-docker run -d -p 3000:3000 -v $(pwd)/config.json:/app/config.json:ro maribotto/lan-jukebox:latest
-```
+1. **Download and create config.json**
+   ```
+   curl -o config.json https://raw.githubusercontent.com/maribotto/lan-jukebox/main/config.example.json
+   ```
+   Then edit `config.json` and replace the IP with your host machine's IP address.
+
+2. **Pull and run**
+   ```
+   docker pull maribotto/lan-jukebox:latest
+   docker run -d -p 3000:3000 -v $(pwd)/config.json:/app/config.json:ro maribotto/lan-jukebox:latest
+   ```
 
 ### Docker Compose (Recommended)
 
@@ -81,12 +88,26 @@ docker run -d -p 3000:3000 -v $(pwd)/config.json:/app/config.json:ro maribotto/l
 
 ### Docker CLI (without compose)
 
-1. **Build image**
+1. **Create config.json**
+
+   If you cloned the repository:
+   ```
+   cp config.example.json config.json
+   ```
+
+   Or download directly:
+   ```
+   curl -o config.json https://raw.githubusercontent.com/maribotto/lan-jukebox/main/config.example.json
+   ```
+
+   Then edit `config.json` and replace the IP with your host machine's IP address.
+
+2. **Build image**
    ```
    docker build -t lan-jukebox .
    ```
 
-2. **Run container**
+3. **Run container**
    ```
    docker run -d \
      -p 3000:3000 \
@@ -95,7 +116,7 @@ docker run -d -p 3000:3000 -v $(pwd)/config.json:/app/config.json:ro maribotto/l
      lan-jukebox
    ```
 
-3. **Stop**
+4. **Stop**
    ```
    docker stop lan-jukebox
    docker rm lan-jukebox
