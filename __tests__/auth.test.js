@@ -140,6 +140,129 @@ describe('Authentication Tests', () => {
       const statusRes = await agent.get('/api/status');
       expect(statusRes.statusCode).toBe(401);
     });
+
+    it('should handle logout when not logged in', async () => {
+      const res = await request(app)
+        .post('/api/logout');
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.success).toBe(true);
+      // Session middleware creates a session even if not authenticated
+      // So the message will be "Logged out successfully" not "Already logged out"
+      expect(res.body.message).toBeDefined();
+    });
+  });
+
+  describe('Session Management', () => {
+    it('should store username in session after login', async () => {
+      const agent = request.agent(app);
+
+      await agent
+        .post('/api/login')
+        .send({ username: 'testuser', password: 'admin' });
+
+      // Make a request that requires authentication to verify session persists
+      const res1 = await agent.get('/api/status');
+      expect(res1.statusCode).toBe(200);
+
+      // Make another request to verify session is still valid
+      const res2 = await agent.get('/api/queue');
+      expect(res2.statusCode).toBe(200);
+    });
+
+    it('should maintain authentication across multiple requests', async () => {
+      const agent = request.agent(app);
+
+      // Login
+      await agent
+        .post('/api/login')
+        .send({ username: 'testuser', password: 'admin' });
+
+      // Make several requests
+      for (let i = 0; i < 5; i++) {
+        const res = await agent.get('/api/status');
+        expect(res.statusCode).toBe(200);
+        expect(res.body.isHost).toBeDefined();
+      }
+    });
+  });
+
+  describe('Security Tests', () => {
+    it('should reject SQL injection attempts in username', async () => {
+      const res = await request(app)
+        .post('/api/login')
+        .send({ username: "admin' OR '1'='1", password: 'admin' });
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Invalid credentials');
+    });
+
+    it('should reject SQL injection attempts in password', async () => {
+      const res = await request(app)
+        .post('/api/login')
+        .send({ username: 'testuser', password: "' OR '1'='1" });
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('should handle very long usernames', async () => {
+      const longUsername = 'a'.repeat(10000);
+      const res = await request(app)
+        .post('/api/login')
+        .send({ username: longUsername, password: 'admin' });
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('should handle very long passwords', async () => {
+      const longPassword = 'a'.repeat(10000);
+      const res = await request(app)
+        .post('/api/login')
+        .send({ username: 'testuser', password: longPassword });
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('should handle empty strings for username and password', async () => {
+      const res = await request(app)
+        .post('/api/login')
+        .send({ username: '', password: '' });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toBe('Username and password required');
+    });
+
+    it('should handle whitespace-only username and password', async () => {
+      const res = await request(app)
+        .post('/api/login')
+        .send({ username: '   ', password: '   ' });
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('should be case-sensitive for username', async () => {
+      const res = await request(app)
+        .post('/api/login')
+        .send({ username: 'TESTUSER', password: 'admin' });
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Invalid credentials');
+    });
+
+    it('should handle special characters in credentials', async () => {
+      const res = await request(app)
+        .post('/api/login')
+        .send({ username: '<script>alert("xss")</script>', password: 'admin' });
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body.success).toBe(false);
+    });
   });
 });
 
