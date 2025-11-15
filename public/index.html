@@ -87,6 +87,7 @@
         let isHostGlobal = false; // NEW: Stores if we are the host
         let playbackTimeout = null; // Timeout for auto-skip if video doesn't start
         let isCurrentlyPlaying = false; // Track if a video is currently playing
+        let previousQueueLength = 0; // Track previous queue length for auto-start detection
 
         const startButton = document.getElementById('start-button');
         const skipButton = document.getElementById('skip-button'); // NEW
@@ -336,7 +337,16 @@
             try {
                 const response = await fetch('/api/queue');
                 queue = await response.json();
-                
+
+                // NEW: Auto-start playback if queue went from empty to having videos (for host)
+                if (isHostGlobal && isPlayerReady && !isCurrentlyPlaying) {
+                    if (previousQueueLength === 0 && queue.length > 0) {
+                        console.log('Auto-starting playback because queue now has videos (detected via polling)');
+                        playNextVideo();
+                    }
+                }
+                previousQueueLength = queue.length;
+
                 queueList.innerHTML = '';
                 if (queue.length === 0) {
                     queueList.innerHTML = '<li>The queue is empty.</li>';
@@ -344,7 +354,7 @@
                 }
                 queue.forEach((video, index) => {
                     const li = document.createElement('li');
-                    
+
                     // The part containing the video title
                     const titleSpan = document.createElement('span');
                     titleSpan.textContent = `${index + 1}: ${video.title || video.url}`;
@@ -354,7 +364,7 @@
                         li.classList.add('now-playing');
                         titleSpan.textContent = `(Next up) ${video.title || video.url}`;
                     }
-                    
+
                     // NEW: Add delete button for host (but not for the "Next up" video)
                     if (isHostGlobal && index > 0) {
                         const deleteBtn = document.createElement('button');
