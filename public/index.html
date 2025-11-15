@@ -672,10 +672,10 @@
                     const i = (y * noiseCanvas.width + x) * 4;
                     const n = perlinNoise(x, y, noiseTime);
 
-                    data[i] = 180 + n * 30;     // R - light blue-gray
-                    data[i + 1] = 190 + n * 30; // G
-                    data[i + 2] = 200 + n * 40; // B - slightly more blue
-                    data[i + 3] = n * 40;       // A - very transparent
+                    data[i] = 150 + n * 50;     // R - light blue-gray
+                    data[i + 1] = 170 + n * 50; // G
+                    data[i + 2] = 200 + n * 55; // B - slightly more blue
+                    data[i + 3] = n * 120;      // A - more visible
                 }
             }
 
