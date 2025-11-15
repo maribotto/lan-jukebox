@@ -79,6 +79,7 @@ if (config.trustProxy === true) {
 // ------------------------------
 
 let queue = [];
+let currentlyPlaying = null; // Track the currently playing video
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -265,9 +266,11 @@ app.post('/api/next', requireAuth, (req, res) => {
     }
     const nextVideo = queue.shift();
     if (nextVideo) {
+        currentlyPlaying = nextVideo; // Track the currently playing video
         console.log(`Playing (host): ${nextVideo.title}`);
         res.json({ nextVideo: nextVideo });
     } else {
+        currentlyPlaying = null; // Clear when queue is empty
         console.log('Queue is empty.');
         res.json({ nextVideo: null });
     }
@@ -294,7 +297,10 @@ app.post('/api/delete', requireAuth, (req, res) => {
 
 // Get current queue (for all)
 app.get('/api/queue', requireAuth, (req, res) => {
-    res.json(queue);
+    res.json({
+        queue: queue,
+        currentlyPlaying: currentlyPlaying
+    });
 });
 
 // ------ STARTUP ------

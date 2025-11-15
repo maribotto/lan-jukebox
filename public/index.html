@@ -63,6 +63,11 @@
         <div id="guest-message" class="hidden">
             <h2>You are a guest</h2>
             <p>You can see the queue and add videos, but only the "host" machine can play music.</p>
+
+            <div id="guest-now-playing" style="margin-top: 20px; padding: 15px; background: #fff; border-radius: 8px; border: 2px solid #007bff;">
+                <h3 style="margin-top: 0; color: #007bff;">🎵 Currently Playing</h3>
+                <p id="guest-current-title" style="font-size: 1.1em; margin: 10px 0;">Nothing is playing</p>
+            </div>
         </div>
 
         <div class="queue-wrapper">
@@ -332,11 +337,29 @@
             }
         });
 
-        // MODIFIED: Queue list update (now shows delete buttons for host)
+        // MODIFIED: Queue list update (now shows delete buttons for host and currently playing for guests)
         async function updateQueueList() {
             try {
                 const response = await fetch('/api/queue');
-                queue = await response.json();
+                const data = await response.json();
+
+                // Handle new API format (object with queue and currentlyPlaying)
+                queue = data.queue || data; // Fallback to old format if needed
+                const currentlyPlaying = data.currentlyPlaying || null;
+
+                // Update guest's "currently playing" display
+                if (!isHostGlobal) {
+                    const guestCurrentTitle = document.getElementById('guest-current-title');
+                    if (currentlyPlaying) {
+                        guestCurrentTitle.textContent = currentlyPlaying.title || currentlyPlaying.url;
+                        guestCurrentTitle.style.fontWeight = 'bold';
+                        guestCurrentTitle.style.color = '#007bff';
+                    } else {
+                        guestCurrentTitle.textContent = 'Nothing is playing';
+                        guestCurrentTitle.style.fontWeight = 'normal';
+                        guestCurrentTitle.style.color = '#666';
+                    }
+                }
 
                 // NEW: Auto-start playback if queue went from empty to having videos (for host)
                 if (isHostGlobal && isPlayerReady && !isCurrentlyPlaying) {

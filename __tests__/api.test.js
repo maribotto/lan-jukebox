@@ -55,7 +55,9 @@ describe('API Tests (Without Authentication)', () => {
         .get('/api/queue');
 
       expect(res.statusCode).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body).toHaveProperty('queue');
+      expect(res.body).toHaveProperty('currentlyPlaying');
+      expect(Array.isArray(res.body.queue)).toBe(true);
     });
   });
 
