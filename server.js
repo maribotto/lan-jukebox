@@ -254,9 +254,14 @@ app.post('/api/add', requireAuth, async (req, res) => { // Changed to async func
     // Warn user if embed check didn't pass
     const message = embedCheckPassed
         ? 'Video added successfully'
-        : 'Video added (warning: could not verify if embedding is allowed)';
+        : 'Video added (⚠️ Warning: Could not verify embedding permissions. Video may fail to play if restricted by owner, age-gated, or Premium-only.)';
 
-    res.status(201).json({ success: true, message: message, video: videoObject });
+    res.status(201).json({
+        success: true,
+        message: message,
+        video: videoObject,
+        embedVerified: embedCheckPassed // Add this flag for frontend to use
+    });
 });
 
 // Get next video (HOST ONLY)

@@ -199,26 +199,39 @@
             clearTimeout(playbackTimeout); // Clear timeout on error
             console.error('Player error:', event.data);
 
-            // YouTube error codes explained
+            // YouTube error codes explained with user-friendly messages
             const errorMessages = {
-                2: 'Invalid video ID',
-                5: 'HTML5 player error',
-                100: 'Video not found or private',
-                101: 'Video embedding not allowed by owner',
-                150: 'Video embedding not allowed by owner'
+                2: 'Invalid video ID or malformed URL',
+                5: 'HTML5 player error (browser compatibility issue)',
+                100: 'Video not found, private, or deleted',
+                101: 'Embedding disabled by video owner or age-restricted',
+                150: 'Embedding disabled by video owner or region-locked'
             };
 
-            const errorMsg = errorMessages[event.data] || 'Unknown error';
-            currentVideoTitle.textContent = `❌ Error ${event.data}: ${errorMsg}. Skipping in 3s...`;
+            const errorExplanations = {
+                2: 'The video link may be incorrect or corrupted.',
+                5: 'Try refreshing the page or using a different browser.',
+                100: 'This video is unavailable. It may be private, deleted, or region-restricted.',
+                101: 'The video owner has disabled embedding, or it requires age verification.',
+                150: 'The video cannot be embedded due to owner restrictions or geographic limitations.'
+            };
+
+            const errorMsg = errorMessages[event.data] || 'Unknown playback error';
+            const explanation = errorExplanations[event.data] || 'Please try a different video.';
+
+            currentVideoTitle.textContent = `❌ Error ${event.data}: ${errorMsg}`;
+            console.error(`YouTube Player Error ${event.data}: ${errorMsg}\n${explanation}`);
 
             // Check if there are more videos in queue before retrying
+            currentVideoTitle.textContent += ' Skipping in 3s...';
             setTimeout(async () => {
                 const queueResponse = await fetch('/api/queue');
                 const queueData = await queueResponse.json();
-                if (queueData.length > 0) {
+                if (queueData.queue && queueData.queue.length > 0) {
+                    currentVideoTitle.textContent = '⏭️ Skipping to next video...';
                     playNextVideo();
                 } else {
-                    currentVideoTitle.textContent = `❌ Error ${event.data}: ${errorMsg}. Queue is empty.`;
+                    currentVideoTitle.textContent = `❌ ${errorMsg}. Queue is empty.`;
                     isCurrentlyPlaying = false;
                     player.stopVideo();
                 }
@@ -318,8 +331,11 @@
                 }
 
                 // Show warning if embed check didn't pass
-                if (data.message && data.message.includes('warning')) {
-                    console.warn(data.message);
+                if (!data.embedVerified) {
+                    alert(`⚠️ Video Added with Warning\n\n${data.message}\n\nCommon reasons videos fail to play:\n• Age-restricted content (requires login)\n• Music videos restricted by record labels\n• Premium/YouTube Music exclusive content\n• Owner disabled embedding\n\nThe video has been added to queue but may skip automatically if it cannot play.`);
+                } else {
+                    // Show brief success message for verified videos
+                    console.log('✅ Video added and verified:', data.video.title);
                 }
 
                 addForm.querySelector('button').textContent = originalText;
