@@ -662,7 +662,7 @@
 
         let noiseTime = 0;
         function animateNoise() {
-            noiseTime += 0.005;
+            noiseTime += 0.02;
 
             const imageData = noiseCtx.createImageData(noiseCanvas.width, noiseCanvas.height);
             const data = imageData.data;
@@ -672,10 +672,10 @@
                     const i = (y * noiseCanvas.width + x) * 4;
                     const n = perlinNoise(x, y, noiseTime);
 
-                    data[i] = 150 + n * 50;     // R - light blue-gray
-                    data[i + 1] = 170 + n * 50; // G
-                    data[i + 2] = 200 + n * 55; // B - slightly more blue
-                    data[i + 3] = n * 120;      // A - more visible
+                    data[i] = 200 + n * 40;     // R - lighter
+                    data[i + 1] = 210 + n * 40; // G
+                    data[i + 2] = 230 + n * 25; // B - more blue
+                    data[i + 3] = n * 60;       // A - moderate visibility
                 }
             }
 
