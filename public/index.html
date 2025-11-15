@@ -150,7 +150,7 @@
             
             // The queue list is updated for everyone
             updateQueueList();
-            setInterval(updateQueueList, 5000); // Update every 5s
+            setInterval(updateQueueList, 2000); // Update every 2s for faster now-playing updates
         });
 
         // ------ 2. YOUTUBE API STARTUP (host only) ------
@@ -328,9 +328,10 @@
                 // If we are host and nothing is currently playing, start playback
                 if (isHostGlobal && isPlayerReady && !isCurrentlyPlaying) {
                     console.log('Auto-starting playback because queue was empty');
-                    playNextVideo();
+                    await playNextVideo(); // Wait for playback to start before updating
+                } else {
+                    updateQueueList(); // Update list for everyone immediately
                 }
-                updateQueueList(); // Update list for everyone immediately
             } catch (error) {
                 console.error('Error adding video:', error);
                 addForm.querySelector('button').textContent = 'Add';
