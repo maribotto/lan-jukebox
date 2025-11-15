@@ -476,11 +476,11 @@
         if (document.getElementById('add-form')) {
             document.getElementById('add-form').addEventListener('submit', (e) => {
                 e.preventDefault();
-                const url = document.getElementById('videoUrl').value;
+                const videoUrl = document.getElementById('videoUrl').value;
                 fetch('/api/add', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({url}),
+                    body: JSON.stringify({videoUrl}),
                     credentials: 'include'
                 })
                 .then(res => res.json())
@@ -494,11 +494,11 @@
         if (document.getElementById('guest-add-form')) {
             document.getElementById('guest-add-form').addEventListener('submit', (e) => {
                 e.preventDefault();
-                const url = document.getElementById('guest-videoUrl').value;
+                const videoUrl = document.getElementById('guest-videoUrl').value;
                 fetch('/api/add', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({url}),
+                    body: JSON.stringify({videoUrl}),
                     credentials: 'include'
                 })
                 .then(res => res.json())
