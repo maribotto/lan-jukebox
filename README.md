@@ -20,46 +20,6 @@ A web application that allows LAN party guests to add YouTube videos to a shared
 - 🔒 **IP-based authentication** - Only the host can control playback
 - 📱 **Responsive design** - Works on mobile devices
 
-## ⚠️ Video Restrictions
-
-Due to YouTube's embedding limitations, **some videos cannot be played** in the jukebox. The application validates videos before adding them to the queue, but certain restrictions cannot be detected in advance.
-
-### Videos That Won't Work
-
-The following types of videos will fail to play or auto-skip:
-
-- **🔞 Age-restricted content** - Requires YouTube login (not possible in embedded player)
-- **🎵 Music videos with restrictions** - Many music videos are blocked by record labels (VEVO, UMG, etc.)
-- **💎 YouTube Premium/Music exclusive content** - Requires paid subscription
-- **🚫 Embedding disabled by owner** - Video owner has explicitly disabled embedding
-- **🌍 Region-locked content** - Videos restricted to certain countries
-- **🔒 Private or unlisted videos** - Not accessible through embed player
-- **❌ Deleted or removed videos** - No longer available
-
-### What Happens When a Video Can't Play
-
-1. **At submission:** Videos that are clearly non-embeddable are rejected with an error message
-2. **At playback:** If a video fails to start within 10 seconds, it automatically skips to the next video
-3. **On error:** YouTube error codes are displayed with explanations (e.g., Error 101: Embedding disabled)
-
-### Tips for Best Results
-
-- ✅ **Use official music uploads** from artists' channels rather than topic channels
-- ✅ **Test videos first** by checking if they can be embedded on other websites
-- ✅ **Avoid "Auto-Generated" topic videos** - these are often restricted
-- ✅ **Use lyric videos or covers** as alternatives to official music videos
-- ✅ **Check for "Made for Kids" restrictions** - these may have limited embedding
-
-### Error Codes Reference
-
-Common YouTube player error codes:
-
-- **Error 2:** Invalid video ID or malformed URL
-- **Error 5:** HTML5 player error (browser compatibility)
-- **Error 100:** Video not found, private, or deleted
-- **Error 101:** Embedding disabled or age-restricted
-- **Error 150:** Embedding disabled or region-locked
-
 ## 🧩 Browser Extensions
 
 Add YouTube videos to your LAN Jukebox directly from the YouTube website:
@@ -349,6 +309,46 @@ Caddy automatically:
 - Check password hash was generated correctly with bcrypt cost factor 10
 - Clear browser cookies and try logging in again
 - Check server logs for authentication errors
+
+## ⚠️ Video Restrictions
+
+Due to YouTube's embedding limitations, **some videos cannot be played** in the jukebox. The application validates videos before adding them to the queue, but certain restrictions cannot be detected in advance.
+
+### Videos That Won't Work
+
+The following types of videos will fail to play or auto-skip:
+
+- **🔞 Age-restricted content** - Requires YouTube login (not possible in embedded player)
+- **🎵 Music videos with restrictions** - Many music videos are blocked by record labels (VEVO, UMG, etc.)
+- **💎 YouTube Premium/Music exclusive content** - Requires paid subscription
+- **🚫 Embedding disabled by owner** - Video owner has explicitly disabled embedding
+- **🌍 Region-locked content** - Videos restricted to certain countries
+- **🔒 Private or unlisted videos** - Not accessible through embed player
+- **❌ Deleted or removed videos** - No longer available
+
+### What Happens When a Video Can't Play
+
+1. **At submission:** Videos that are clearly non-embeddable are rejected with an error message
+2. **At playback:** If a video fails to start within 10 seconds, it automatically skips to the next video
+3. **On error:** YouTube error codes are displayed with explanations (e.g., Error 101: Embedding disabled)
+
+### Tips for Best Results
+
+- ✅ **Use official music uploads** from artists' channels rather than topic channels
+- ✅ **Test videos first** by checking if they can be embedded on other websites
+- ✅ **Avoid "Auto-Generated" topic videos** - these are often restricted
+- ✅ **Use lyric videos or covers** as alternatives to official music videos
+- ✅ **Check for "Made for Kids" restrictions** - these may have limited embedding
+
+### Error Codes Reference
+
+Common YouTube player error codes:
+
+- **Error 2:** Invalid video ID or malformed URL
+- **Error 5:** HTML5 player error (browser compatibility)
+- **Error 100:** Video not found, private, or deleted
+- **Error 101:** Embedding disabled or age-restricted
+- **Error 150:** Embedding disabled or region-locked
 
 ## 📄 License
 
