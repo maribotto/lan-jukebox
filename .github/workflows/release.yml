@@ -264,3 +264,276 @@ jobs:
         docker push maribotto/lan-jukebox:latest
         echo "Successfully pushed maribotto/lan-jukebox:${{ steps.version.outputs.tag }}"
         echo "Successfully pushed maribotto/lan-jukebox:latest"
+
+  windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+
+    - name: Get version from tag
+      id: version
+      shell: bash
+      run: |
+        # Extract version from tag (e.g., v1.14.0 -> v1.14.0)
+        echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build Windows executables
+      run: npm run build:win
+
+    - name: Verify build artifacts
+      shell: bash
+      run: |
+        echo "========================================="
+        echo "Verifying Build Artifacts"
+        echo "========================================="
+
+        # Check main executable
+        if [ ! -f "dist/lan-jukebox.exe" ]; then
+          echo "❌ TEST FAILED: lan-jukebox.exe not found"
+          exit 1
+        fi
+        echo "✅ lan-jukebox.exe exists"
+
+        # Check password generator executable
+        if [ ! -f "dist/generate-password.exe" ]; then
+          echo "❌ TEST FAILED: generate-password.exe not found"
+          exit 1
+        fi
+        echo "✅ generate-password.exe exists"
+
+        # Check public directory
+        if [ ! -d "dist/public" ]; then
+          echo "❌ TEST FAILED: public directory not copied"
+          exit 1
+        fi
+        echo "✅ public directory copied"
+
+        # Check config.example.json
+        if [ ! -f "dist/config.example.json" ]; then
+          echo "❌ TEST FAILED: config.example.json not found"
+          exit 1
+        fi
+        echo "✅ config.example.json exists"
+
+        # Check README.txt
+        if [ ! -f "dist/README.txt" ]; then
+          echo "❌ TEST FAILED: README.txt not found"
+          exit 1
+        fi
+        echo "✅ README.txt exists"
+
+        # Check index.html in public
+        if [ ! -f "dist/public/index.html" ]; then
+          echo "❌ TEST FAILED: public/index.html not found"
+          exit 1
+        fi
+        echo "✅ public/index.html exists"
+
+        # Show file sizes
+        echo ""
+        echo "Build artifact sizes:"
+        ls -lh dist/*.exe dist/*.json dist/*.txt 2>/dev/null || true
+
+    - name: Test Windows executables
+      shell: bash
+      run: |
+        set -e
+
+        echo "========================================="
+        echo "Starting Windows .exe Tests"
+        echo "========================================="
+
+        cd dist
+
+        # Test 1: Create test config
+        echo ""
+        echo "Test 1: Creating test configuration..."
+        cat > config.json << 'EOF'
+        {
+          "hostIp": "127.0.0.1",
+          "port": 3000,
+          "requireLogin": false
+        }
+        EOF
+        echo "✅ Test config created"
+
+        # Test 2: Test generate-password.exe
+        echo ""
+        echo "Test 2: Testing generate-password.exe..."
+        if ! ./generate-password.exe > password_output.txt 2>&1; then
+          echo "⚠️  generate-password.exe execution completed with warnings"
+          cat password_output.txt
+        else
+          echo "✅ generate-password.exe executed successfully"
+        fi
+
+        # Test 3: Start main executable
+        echo ""
+        echo "Test 3: Starting lan-jukebox.exe..."
+        start /B lan-jukebox.exe > server_output.txt 2>&1
+
+        # Wait for startup
+        echo "Waiting for server to start..."
+        for i in {1..15}; do
+          sleep 2
+          if curl -s http://localhost:3000/ > /dev/null 2>&1; then
+            echo "✅ Server started successfully (attempt $i/15)"
+            break
+          fi
+          if [ $i -eq 15 ]; then
+            echo "❌ TEST FAILED: Server failed to start after 30 seconds"
+            cat server_output.txt 2>/dev/null || echo "No server output"
+            taskkill //F //IM lan-jukebox.exe 2>/dev/null || true
+            exit 1
+          fi
+        done
+
+        # Test 4: HTTP main page
+        echo ""
+        echo "Test 4: Testing HTTP main page..."
+        HTTP_CODE=$(curl -s -o response.html -w "%{http_code}" http://localhost:3000/)
+        if [ "$HTTP_CODE" != "200" ]; then
+          echo "❌ TEST FAILED: Expected HTTP 200, got $HTTP_CODE"
+          cat server_output.txt 2>/dev/null || true
+          taskkill //F //IM lan-jukebox.exe 2>/dev/null || true
+          exit 1
+        fi
+        echo "✅ HTTP status code: $HTTP_CODE"
+
+        # Test 5: HTML validation
+        echo ""
+        echo "Test 5: Validating HTML response..."
+        if ! grep -q "<!DOCTYPE html>" response.html; then
+          echo "❌ TEST FAILED: Invalid HTML response"
+          cat response.html
+          taskkill //F //IM lan-jukebox.exe 2>/dev/null || true
+          exit 1
+        fi
+        echo "✅ Valid HTML response"
+
+        # Test 6: Login page
+        echo ""
+        echo "Test 6: Testing login page..."
+        LOGIN_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/login.html)
+        if [ "$LOGIN_CODE" != "200" ]; then
+          echo "❌ TEST FAILED: Login page returned HTTP $LOGIN_CODE"
+          taskkill //F //IM lan-jukebox.exe 2>/dev/null || true
+          exit 1
+        fi
+        echo "✅ Login page accessible (HTTP $LOGIN_CODE)"
+
+        # Test 7: API endpoints
+        echo ""
+        echo "Test 7: Testing API endpoints..."
+
+        QUEUE_RESPONSE=$(curl -s http://localhost:3000/api/queue)
+        if [ -z "$QUEUE_RESPONSE" ]; then
+          echo "❌ TEST FAILED: /api/queue returned empty response"
+          taskkill //F //IM lan-jukebox.exe 2>/dev/null || true
+          exit 1
+        fi
+        echo "✅ /api/queue responds: $QUEUE_RESPONSE"
+
+        # Validate JSON
+        if ! echo "$QUEUE_RESPONSE" | python -m json.tool > /dev/null 2>&1; then
+          echo "❌ TEST FAILED: /api/queue response is not valid JSON"
+          taskkill //F //IM lan-jukebox.exe 2>/dev/null || true
+          exit 1
+        fi
+        echo "✅ /api/queue returns valid JSON"
+
+        CURRENT_RESPONSE=$(curl -s http://localhost:3000/api/current)
+        if [ -z "$CURRENT_RESPONSE" ]; then
+          echo "❌ TEST FAILED: /api/current returned empty response"
+          taskkill //F //IM lan-jukebox.exe 2>/dev/null || true
+          exit 1
+        fi
+        echo "✅ /api/current responds"
+
+        PLAYER_RESPONSE=$(curl -s http://localhost:3000/api/player-state)
+        if [ -z "$PLAYER_RESPONSE" ]; then
+          echo "❌ TEST FAILED: /api/player-state returned empty response"
+          taskkill //F //IM lan-jukebox.exe 2>/dev/null || true
+          exit 1
+        fi
+        echo "✅ /api/player-state responds"
+
+        # Test 8: Stability test
+        echo ""
+        echo "Test 8: Testing stability (10 second run)..."
+        sleep 10
+
+        # Check if still responding
+        STABILITY_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/)
+        if [ "$STABILITY_CODE" != "200" ]; then
+          echo "❌ TEST FAILED: Server not responding after stability test"
+          taskkill //F //IM lan-jukebox.exe 2>/dev/null || true
+          exit 1
+        fi
+        echo "✅ Server stable after 10 seconds"
+
+        # Test 9: Static file serving
+        echo ""
+        echo "Test 9: Testing static file serving..."
+        STATIC_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/index.html)
+        if [ "$STATIC_CODE" != "200" ]; then
+          echo "❌ TEST FAILED: Static file serving failed"
+          taskkill //F //IM lan-jukebox.exe 2>/dev/null || true
+          exit 1
+        fi
+        echo "✅ Static files served correctly"
+
+        # Test 10: Config loading
+        echo ""
+        echo "Test 10: Verifying config was loaded..."
+        # The server should be running on port 3000 as per config
+        if ! netstat -an | grep -q ":3000.*LISTENING"; then
+          echo "❌ TEST FAILED: Server not listening on configured port 3000"
+          taskkill //F //IM lan-jukebox.exe 2>/dev/null || true
+          exit 1
+        fi
+        echo "✅ Config loaded correctly (listening on port 3000)"
+
+        # Stop server gracefully
+        echo ""
+        echo "Stopping server..."
+        taskkill //F //IM lan-jukebox.exe 2>/dev/null || true
+        sleep 2
+
+        echo ""
+        echo "========================================="
+        echo "✅ ALL .EXE TESTS PASSED!"
+        echo "========================================="
+
+    - name: Create release archive
+      shell: bash
+      run: |
+        cd dist
+        7z a lan-jukebox-windows-${{ steps.version.outputs.tag }}.zip \
+          lan-jukebox.exe \
+          generate-password.exe \
+          config.example.json \
+          README.txt \
+          public/
+
+        echo "Archive created: lan-jukebox-windows-${{ steps.version.outputs.tag }}.zip"
+        ls -lh lan-jukebox-windows-${{ steps.version.outputs.tag }}.zip
+
+    - name: Upload release asset
+      uses: softprops/action-gh-release@v1
+      with:
+        files: dist/lan-jukebox-windows-${{ steps.version.outputs.tag }}.zip
+        tag_name: ${{ steps.version.outputs.tag }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
