@@ -50,7 +50,7 @@ Usage:
 
 Port Configuration:
 -------------------
-Default port is 3000. To change it, you'll need to run from source.
+Default port is 3000. To change it, edit the "port" value in config.json.
 
 For more information, visit:
 https://github.com/maribotto/lan-jukebox

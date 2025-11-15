@@ -4,6 +4,8 @@ const fs = require('fs');
 const fetch = require('node-fetch');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
+const dns = require('dns').promises;
+const os = require('os');
 const app = express();
 
 // --- LOAD CONFIGURATION ---
@@ -30,6 +32,34 @@ try {
     console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
     process.exit(1); // Stop the server because config is missing
 }
+
+// Resolve hostname to IP if needed
+let resolvedHostIp = null;
+
+async function resolveHostIp() {
+    // Check if hostIp looks like a hostname (not an IP address)
+    const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+    const ipv6Pattern = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/;
+
+    if (!ipv4Pattern.test(config.hostIp) && !ipv6Pattern.test(config.hostIp)) {
+        // It's likely a hostname, try to resolve it
+        try {
+            const addresses = await dns.resolve4(config.hostIp);
+            if (addresses && addresses.length > 0) {
+                resolvedHostIp = addresses[0];
+                console.log(`✓ Resolved hostname "${config.hostIp}" to IP: ${resolvedHostIp}`);
+                return;
+            }
+        } catch (error) {
+            console.warn(`⚠️  Could not resolve hostname "${config.hostIp}": ${error.message}`);
+            console.warn(`   Will use "${config.hostIp}" as-is for comparison`);
+        }
+    }
+
+    // If it's already an IP or resolution failed, use it as-is
+    resolvedHostIp = config.hostIp;
+}
+
 // ------------------------------
 
 // --- PORT CONFIGURATION ---
@@ -99,8 +129,8 @@ function isHost(req) {
         clientIp = clientIp.substring(7);
     }
 
-    // Allow both localhost (for testing) and the configured host IP
-    const allowedIps = ['127.0.0.1', '::1', config.hostIp];
+    // Allow both localhost (for testing) and the configured/resolved host IP
+    const allowedIps = ['127.0.0.1', '::1', resolvedHostIp];
 
     return allowedIps.includes(clientIp);
 }
@@ -270,12 +300,16 @@ app.get('/api/queue', requireAuth, (req, res) => {
 // ------ STARTUP ------
 // Only start server if this file is run directly (not imported for testing)
 if (require.main === module) {
-    app.listen(PORT, '0.0.0.0', () => {
-        console.log('===========================================================');
-        console.log(`🚀 Jukebox API running at: http://localhost:${PORT}`);
-        console.log(`🔒 Host (player) locked to IP: ${config.hostIp}`);
-        console.log(`Guests can add videos at: http://${config.hostIp}:${PORT}`);
-        console.log('===========================================================');
+    resolveHostIp().then(() => {
+        app.listen(PORT, '0.0.0.0', () => {
+            const hostname = os.hostname();
+            console.log('===========================================================');
+            console.log(`🚀 Jukebox API running at: http://localhost:${PORT}`);
+            console.log(`🔒 Host (player) locked to: ${config.hostIp}${resolvedHostIp !== config.hostIp ? ` (${resolvedHostIp})` : ''}`);
+            console.log(`📡 LAN access: http://${hostname}.local:${PORT}`);
+            console.log(`   Guests can also use: http://${config.hostIp}:${PORT}`);
+            console.log('===========================================================');
+        });
     });
 }
 

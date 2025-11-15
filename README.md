@@ -46,6 +46,8 @@ Add YouTube videos to your LAN Jukebox directly from the YouTube website:
   ifconfig | grep "inet"
   ```
 
+  **💡 Tip**: Instead of using IP addresses, you can use your computer's hostname! Most systems support `.local` mDNS names (e.g., `my-computer.local`). The server will display this address when it starts.
+
 ### Docker Hub (Easiest)
 
 Pull and run the pre-built image directly from [Docker Hub](https://hub.docker.com/r/maribotto/lan-jukebox):
@@ -148,7 +150,7 @@ docker run -d -p 3000:3000 -v $(pwd)/config.json:/app/config.json:ro maribotto/l
 }
 ```
 
-- `hostIp`: IP address of the host machine that controls playback
+- `hostIp`: IP address or hostname of the host machine that controls playback (e.g., `"192.168.1.100"` or `"my-computer.local"`)
 - `port` (optional): Port number for the server. Default: `3000`
 - `trustProxy` (optional): Set to `true` when using a reverse proxy like Caddy or Nginx. Default: `false`
 - `requireLogin` (optional): Set to `true` to require authentication. Default: `false`
