@@ -20,6 +20,13 @@ A web application that allows LAN party guests to add YouTube videos to a shared
 - 🔒 **IP-based authentication** - Only the host can control playback
 - 📱 **Responsive design** - Works on mobile devices
 
+## 🧩 Browser Extensions
+
+Add YouTube videos to your LAN Jukebox directly from the YouTube website:
+
+- **Chrome/Edge Extension**: [lan-jukebox-extension](https://github.com/maribotto/lan-jukebox-extension)
+- **Firefox Extension**: [lan-jukebox-extension-firefox](https://github.com/maribotto/lan-jukebox-extension-firefox)
+
 ## 🚀 Quick Start
 
 ### How to figure out your LAN IP address
