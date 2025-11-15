@@ -394,17 +394,19 @@
         }
 
         function loadCurrent() {
-            fetch('/api/current')
+            fetch('/api/queue', {credentials: 'include'})
                 .then(res => res.json())
                 .then(data => {
+                    const current = data.currentlyPlaying;
+
                     if (isHost) {
-                        if (data.title) {
+                        if (current && current.title) {
                             document.getElementById('now-playing-card').classList.remove('hidden');
-                            document.getElementById('current-video-title').textContent = data.title;
+                            document.getElementById('current-video-title').textContent = current.title;
                             const urlElem = document.getElementById('current-video-url');
-                            if (data.url) {
-                                urlElem.href = data.url;
-                                urlElem.textContent = data.url;
+                            if (current.url) {
+                                urlElem.href = current.url;
+                                urlElem.textContent = current.url;
                                 urlElem.classList.remove('hidden');
                             }
                         }
@@ -412,11 +414,11 @@
                         const titleElem = document.getElementById('guest-current-title');
                         const urlElem = document.getElementById('guest-current-url');
 
-                        if (data.title) {
-                            titleElem.textContent = data.title;
-                            if (data.url) {
-                                urlElem.href = data.url;
-                                urlElem.textContent = data.url;
+                        if (current && current.title) {
+                            titleElem.textContent = current.title;
+                            if (current.url) {
+                                urlElem.href = current.url;
+                                urlElem.textContent = current.url;
                                 urlElem.classList.remove('hidden');
                             }
                         } else {
