@@ -9,7 +9,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Righteous&display=swap" rel="stylesheet">
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 900px; margin: 10px auto; padding: 10px; background-color: #f8f9fa; background-image: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.3) 0%, transparent 50%), url("data:image/svg+xml,%3Csvg width='400' height='400' viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M200 50 Q250 80 240 130 Q230 180 200 200 Q170 180 160 130 Q150 80 200 50 M200 200 Q230 220 240 270 Q250 320 200 350 Q150 320 160 270 Q170 220 200 200 M50 200 Q80 150 130 160 Q180 170 200 200 Q180 230 130 240 Q80 250 50 200 M350 200 Q320 150 270 160 Q220 170 200 200 Q220 230 270 240 Q320 250 350 200 M100 100 Q140 120 120 150 L80 110 Z M300 100 Q260 120 280 150 L320 110 Z M100 300 Q140 280 120 250 L80 290 Z M300 300 Q260 280 280 250 L320 290 Z' stroke='%23000000' stroke-width='2' stroke-opacity='0.08' fill='none'/%3E%3Ccircle cx='200' cy='200' r='15' stroke='%23000000' stroke-width='2' stroke-opacity='0.1' fill='none'/%3E%3Cpath d='M150 80 Q160 100 150 120 M250 80 Q240 100 250 120 M150 280 Q160 300 150 320 M250 280 Q240 300 250 320' stroke='%23000000' stroke-width='2.5' stroke-opacity='0.09' fill='none'/%3E%3C/svg%3E"), linear-gradient(135deg, rgba(248,249,250,0.95) 0%, rgba(212,220,230,0.95) 100%); background-attachment: fixed; min-height: 100vh; position: relative; }
-        #particle-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: auto; z-index: 1; transition: opacity 0.3s ease; }
+        #particle-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; opacity: 0.15; background: radial-gradient(circle at 30% 30%, rgba(200,220,255,0.3) 0%, transparent 50%), radial-gradient(circle at 70% 60%, rgba(180,200,255,0.25) 0%, transparent 50%); animation: float 20s ease-in-out infinite; }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
         .container { position: relative; z-index: 2; }
         .container { display: flex; gap: 30px; align-items: stretch; }
         .player-wrapper { flex: 3; display: flex; flex-direction: column; }
@@ -56,7 +60,7 @@
     </style>
 </head>
 <body>
-    <canvas id="particle-canvas"></canvas>
+    <div id="particle-canvas"></div>
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; position: relative; z-index: 2;">
         <h1 style="margin: 0;">🎬 LAN YouTube Jukebox</h1>
         <button id="logout-btn" class="hidden" style="background: #6c757d; padding: 8px 16px;">Logout</button>
@@ -538,13 +542,16 @@
             }
         });
 
-        // WebGL Animation
+        // Simple CSS animation (WebGL removed for stability)
+        // Background animation is now handled purely by CSS gradients and keyframes
+        // This is much more stable and performant than WebGL
         const canvas = document.getElementById('particle-canvas');
-        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (canvas) {
+            // Canvas is just a div now, no WebGL code needed
+            console.log('Using CSS-based background animation for better stability');
+        }
 
-        if (!gl) {
-            console.log('WebGL not supported, falling back');
-        } else {
+        if (false) { // WebGL code disabled
             let resizeTimeout = null;
             function resizeCanvas() {
                 const width = window.innerWidth;
