@@ -1,0 +1,25 @@
+<svg width='2000' height='2000' viewBox='0 0 2000 2000' xmlns='http://www.w3.org/2000/svg'>
+  <defs>
+    <radialGradient id='rg1' cx='30%' cy='30%' r='70%'>
+      <stop offset='0%' style='stop-color:#00d4ff;stop-opacity:0.6'/>
+      <stop offset='50%' style='stop-color:#0099cc;stop-opacity:0.5'/>
+      <stop offset='100%' style='stop-color:#006699;stop-opacity:0.35'/>
+    </radialGradient>
+    <radialGradient id='rg2' cx='70%' cy='60%' r='60%'>
+      <stop offset='0%' style='stop-color:#00ffff;stop-opacity:0.65'/>
+      <stop offset='50%' style='stop-color:#00cccc;stop-opacity:0.5'/>
+      <stop offset='100%' style='stop-color:#008b8b;stop-opacity:0.4'/>
+    </radialGradient>
+    <linearGradient id='lg1' x1='0%' y1='0%' x2='100%' y2='100%'>
+      <stop offset='0%' style='stop-color:#1e90ff;stop-opacity:0.5'/>
+      <stop offset='100%' style='stop-color:#00bfff;stop-opacity:0.55'/>
+    </linearGradient>
+  </defs>
+  <rect width='2000' height='2000' fill='url(#lg1)'/>
+  <circle cx='600' cy='500' r='800' fill='url(#rg1)'/>
+  <ellipse cx='1400' cy='1200' rx='700' ry='600' fill='url(#rg2)'/>
+  <path d='M 0 1000 Q 500 800 1000 1000 T 2000 1000 L 2000 2000 L 0 2000 Z' fill='#0099cc' opacity='0.4'/>
+  <path d='M 0 400 Q 400 200 800 400 T 1600 400 T 2000 200 L 2000 0 L 0 0 Z' fill='#00d4ff' opacity='0.45'/>
+  <path d='M 300 300 L 800 400 L 1200 200 L 1500 600 L 1100 900 L 500 800 Z' fill='#00bfff' opacity='0.35'/>
+  <path d='M 1000 1000 L 1400 1100 L 1800 900 L 1700 1300 L 1300 1400 L 900 1200 Z' fill='#1e90ff' opacity='0.4'/>
+</svg>
