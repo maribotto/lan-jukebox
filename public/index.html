@@ -172,8 +172,9 @@
         function onYouTubeIframeAPIReady() {
             startButton.addEventListener('click', () => {
                 startButton.classList.add('hidden');
+                statusMessage.classList.add('hidden'); // Hide "Press Start Player" message
                 player = new YT.Player('player', {
-                    height: '390', width: '640', videoId: '', 
+                    height: '390', width: '640', videoId: '',
                     playerVars: { 'playsinline': 1, 'autoplay': 1, 'controls': 1, 'origin': window.location.origin },
                     events: { 'onReady': onPlayerReady, 'onStateChange': onPlayerStateChange, 'onError': onPlayerError }
                 });
