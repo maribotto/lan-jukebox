@@ -133,15 +133,45 @@ echo "✅ Pushed to GitHub"
 
 echo ""
 echo "========================================="
-echo "Step 4: Creating GitHub release"
+echo "Step 4: Building Windows executables"
+echo "========================================="
+
+# Build Windows executables locally (faster and more reliable than CI)
+npm run build:win
+
+echo "✅ Windows executables built"
+
+echo ""
+echo "========================================="
+echo "Step 5: Creating release archive"
+echo "========================================="
+
+# Create zip archive
+cd dist
+zip -r "lan-jukebox-windows-v$NEW_VERSION.zip" \
+    lan-jukebox.exe \
+    generate-password.exe \
+    config.example.json \
+    README.txt \
+    public/
+
+cd ..
+mv "dist/lan-jukebox-windows-v$NEW_VERSION.zip" .
+
+echo "✅ Release archive created: lan-jukebox-windows-v$NEW_VERSION.zip"
+
+echo ""
+echo "========================================="
+echo "Step 6: Creating GitHub release"
 echo "========================================="
 
 # Create GitHub release
 gh release create "v$NEW_VERSION" \
     --title "v$NEW_VERSION - $RELEASE_TITLE" \
-    --notes "$RELEASE_NOTES"
+    --notes "$RELEASE_NOTES" \
+    "lan-jukebox-windows-v$NEW_VERSION.zip"
 
-echo "✅ GitHub release created"
+echo "✅ GitHub release created with Windows .exe"
 
 echo ""
 echo "========================================="
@@ -151,11 +181,11 @@ echo ""
 echo "Release tag:  v$NEW_VERSION"
 echo "Release URL:  https://github.com/$(gh repo view --json nameWithOwner -q .nameWithOwner)/releases/tag/v$NEW_VERSION"
 echo ""
-echo "GitHub Actions is now:"
-echo "  🔨 Building and testing Docker image"
-echo "  🔨 Building and testing Windows .exe"
-echo "  🚀 Deploying to Docker Hub"
-echo "  📦 Uploading .exe to GitHub release"
+echo "GitHub Actions will now:"
+echo "  🔨 Build and test Docker image"
+echo "  🚀 Deploy Docker image to Docker Hub"
+echo ""
+echo "Windows .exe has been built locally and uploaded to the release."
 echo ""
 echo "View workflow progress:"
 echo "  gh run watch"
