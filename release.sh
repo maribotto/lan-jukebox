@@ -149,7 +149,7 @@ echo "========================================="
 # Run automated tests on the build artifacts
 ./test-windows-exe.sh
 
-echo "✅ Windows executables tested"
+echo "✅ Windows executables tested (static validation)"
 
 echo ""
 echo "========================================="
