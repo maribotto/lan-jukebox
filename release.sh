@@ -143,6 +143,16 @@ echo "✅ Windows executables built"
 
 echo ""
 echo "========================================="
+echo "Step 4.5: Testing Windows executables"
+echo "========================================="
+
+# Run automated tests on the build artifacts
+./test-windows-exe.sh
+
+echo "✅ Windows executables tested"
+
+echo ""
+echo "========================================="
 echo "Step 5: Creating release archive"
 echo "========================================="
 
