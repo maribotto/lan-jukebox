@@ -4,26 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LAN Jukebox - Hybrid Player</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Righteous&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: sans-serif;
-            background-color: #121212;
-            color: #e0e0e0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 900px; margin: 10px auto; padding: 10px; background-color: #f8f9fa; background-image: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.3) 0%, transparent 50%), url("data:image/svg+xml,%3Csvg width='400' height='400' viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M200 50 Q250 80 240 130 Q230 180 200 200 Q170 180 160 130 Q150 80 200 50 M200 200 Q230 220 240 270 Q250 320 200 350 Q150 320 160 270 Q170 220 200 200 M50 200 Q80 150 130 160 Q180 170 200 200 Q180 230 130 240 Q80 250 50 200 M350 200 Q320 150 270 160 Q220 170 200 200 Q220 230 270 240 Q320 250 350 200 M100 100 Q140 120 120 150 L80 110 Z M300 100 Q260 120 280 150 L320 110 Z M100 300 Q140 280 120 250 L80 290 Z M300 300 Q260 280 280 250 L320 290 Z' stroke='%23000000' stroke-width='2' stroke-opacity='0.08' fill='none'/%3E%3Ccircle cx='200' cy='200' r='15' stroke='%23000000' stroke-width='2' stroke-opacity='0.1' fill='none'/%3E%3Cpath d='M150 80 Q160 100 150 120 M250 80 Q240 100 250 120 M150 280 Q160 300 150 320 M250 280 Q240 300 250 320' stroke='%23000000' stroke-width='2.5' stroke-opacity='0.09' fill='none'/%3E%3C/svg%3E"), linear-gradient(135deg, rgba(248,249,250,0.95) 0%, rgba(212,220,230,0.95) 100%); background-attachment: fixed; min-height: 100vh; position: relative; color: #333; }
+        
+        #particle-canvas { display: none; }
+        
+        .container { 
+            width: 100%; 
+            max-width: 600px; 
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
+            border: 1px solid #000;
+            position: relative; 
+            z-index: 2;
+            margin: 5px auto; /* Center the container with reduced top/bottom margin */
         }
-        .container {
-            width: 100%;
-            max-width: 800px;
-            background: #1e1e1e;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
+        
+        h1, h2, h3 { font-family: 'Righteous', sans-serif; color: #333; }
         h1 { margin-top: 0; }
         
         /* Player Container */
@@ -33,8 +35,9 @@
             padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
             background: #000;
             margin-bottom: 20px;
-            border-radius: 4px;
+            border-radius: 8px;
             overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
         
         #youtube-player, #jellyfin-player-visual {
@@ -48,52 +51,42 @@
         #jellyfin-player-visual {
             display: none; /* Hidden by default */
             background: #333;
-            position: absolute; /* Already absolute */
+            position: absolute;
             top: 0;
             left: 0;
             right: 0;
-            bottom: 0; /* Ensures it fills parent height */
-            /* Remove flex properties as content will be absolutely positioned */
-            /* align-items: center; */
-            /* justify-content: center; */
-            /* flex-direction: column; */
-            overflow: hidden; /* Ensure image doesn't overflow */
+            bottom: 0;
+            overflow: hidden;
         }
         
         #jellyfin-player-visual img {
-            border-radius: 4px; /* Keep radius */
-
-            /* Positioning behind text */
+            border-radius: 0;
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: cover; /* Cover the container */
+            object-fit: cover;
             z-index: 0;
-            opacity: 0.4; /* Slightly dim the background image */
-            filter: blur(5px); /* Add a slight blur */
-            transform: scale(1.05); /* Slightly scale to hide blur edges */
+            opacity: 0.4;
+            filter: blur(5px);
+            transform: scale(1.05);
         }
 
-        /* Ensure text is above image and truly centered */
         #jellyfin-player-visual h2, #jellyfin-player-visual h3 {
-            position: absolute; /* Take text out of normal flow */
-            width: 100%; /* Ensure text takes full width */
-            text-align: center; /* Center horizontally */
+            position: absolute;
+            width: 100%;
+            text-align: center;
             left: 0;
-            transform: translateY(-50%); /* Adjust for vertical centering */
+            transform: translateY(-50%);
             z-index: 1;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8); /* Make text more readable */
-            margin: 0; /* Reset margins */
-            padding: 0 10px; /* Add some padding */
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            margin: 0;
+            padding: 0 10px;
+            color: #fff; /* Override black color for dark bg */
         }
-        #jellyfin-player-visual h2 {
-            top: 45%; /* Adjust vertical position */
-        }
-        #jellyfin-player-visual h3 {
-            top: 55%; /* Adjust vertical position */
-        }
+        #jellyfin-player-visual h2 { top: 45%; font-size: 2em; }
+        #jellyfin-player-visual h3 { top: 55%; font-size: 1.5em; color: #ddd; }
 
         /* Controls */
         .controls {
@@ -103,41 +96,83 @@
         }
         
         button {
-            padding: 10px 15px;
-            background: #007bff;
+            padding: 12px 18px;
+            background: linear-gradient(180deg, #007bff 0%, #0062cc 100%);
             color: white;
-            border: none;
+            border: 1px solid #005cbf;
             border-radius: 4px;
             cursor: pointer;
             font-size: 1em;
+            font-weight: bold;
+            transition: all 0.2s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
-        button:hover { background: #0056b3; }
+        button:hover { 
+            background: linear-gradient(180deg, #0069d9 0%, #0056b3 100%); 
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+        button:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+        /* Specific button overrides with gradients */
+        #btn-jf-random {
+            background: linear-gradient(180deg, #28a745 0%, #218838 100%);
+            border-color: #1e7e34;
+        }
+        #btn-jf-random:hover {
+            background: linear-gradient(180deg, #218838 0%, #1e7e34 100%);
+        }
+
+        #jf-connect {
+            /* Default blue/primary, JS changes it to green on success */
+        }
+
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box; /* Important for width: 100% */
+            height: 42px; /* Standardize height */
+        }
+
+        /* Ensure buttons within flex forms also match height */
+        #jf-connect-form button, #add-form button, #jf-search-form button {
+            height: 42px;
+            padding: 0 18px; /* Adjust padding to fit height while keeping horizontal padding */
+        }
 
         /* Playlist */
         .playlist {
             list-style: none;
             padding: 0;
-            border: 1px solid #333;
+            border: 1px solid #eee;
             border-radius: 4px;
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
+            background: #fff;
         }
         
         .playlist li {
             padding: 10px;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid #eee;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: #252525;
+            background: #fdfdfd;
+            color: #333;
         }
         
         .playlist li:last-child { border-bottom: none; }
         
         .playlist li.active {
-            background: #333;
-            color: #4da3ff;
+            background: #fff8e5;
+            border-color: #f0ad4e;
             font-weight: bold;
+            color: #333;
         }
         
         .badge {
@@ -146,32 +181,45 @@
             font-size: 0.8em;
             font-weight: bold;
             text-transform: uppercase;
+            margin-right: 5px;
         }
         .badge-yt { background: #ff0000; color: white; }
         .badge-jf { background: #00a4dc; color: white; }
 
         /* Jellyfin Login Form */
-        #jellyfin-login {
+        #jellyfin-login, #add-video-container, #jf-actions {
             margin-bottom: 20px;
             padding: 15px;
-            background: #2a2a2a;
-            border-radius: 4px;
+            background: #fff; /* White bg for cards */
+            border-radius: 8px;
+            border: 1px solid #eee;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        #jf-actions {
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
-        #jellyfin-login input {
-            padding: 8px;
-            background: #333;
-            border: 1px solid #444;
-            color: white;
-            border-radius: 4px;
+        
+        /* Specific override for dark sections if needed, but standardizing on light theme */
+        #guest-now-playing {
+            background: #fff;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
         }
+        #guest-now-playing h2 { color: #333; text-shadow: none; }
+        #guest-now-playing h3 { color: #007bff; text-shadow: none; }
+
     </style>
 </head>
 <body>
-
+<div id="particle-canvas"></div>
 <div class="container">
+    <div id="logout-container" style="position: absolute; top: 20px; right: 20px;"></div>
     <h1>LAN Jukebox</h1>
 
     <!-- Jellyfin Config -->
@@ -217,7 +265,7 @@
     </div>
 
     <!-- Add YouTube Video -->
-    <div style="margin-bottom: 20px; padding: 15px; background: #2a2a2a; border-radius: 4px;">
+    <div id="add-video-container" style="margin-bottom: 20px; padding: 15px; border-radius: 4px;">
         <form id="add-form" style="display: flex; gap: 10px;">
             <input type="text" id="videoUrl" placeholder="YouTube URL" style="flex-grow: 1;">
             <button type="submit" id="btn-add-yt">Add Video</button>
@@ -225,9 +273,9 @@
     </div>
 
     <!-- Jellyfin Search & Random -->
-    <div id="jf-actions" style="margin-bottom: 20px; padding: 15px; background: #2a2a2a; border-radius: 4px; display: flex; flex-direction: column; gap: 10px;">
+    <div id="jf-actions">
         <div style="display: flex; gap: 10px;">
-            <button id="btn-jf-random" style="background: #28a745;">🎲 Add Random Song</button>
+            <button id="btn-jf-random" style="background: linear-gradient(180deg, #28a745 0%, #218838 100%); border-color: #1e7e34;">🎲 Add Random Song</button>
         </div>
         <form id="jf-search-form" style="display: flex; gap: 10px;">
             <input type="text" id="jf-search-input" placeholder="Search Jellyfin..." style="flex-grow: 1;">

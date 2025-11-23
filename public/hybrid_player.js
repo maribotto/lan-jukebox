@@ -26,15 +26,28 @@ async function init() {
 
         // If login is required and user is authenticated, show logout button
         if (authData.requireLogin && authData.authenticated) {
-            const logoutButton = document.createElement('button');
-            logoutButton.id = 'logout-btn';
-            logoutButton.textContent = 'Logout';
-            logoutButton.style.cssText = 'background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; position: absolute; top: 20px; right: 20px;';
-            document.body.prepend(logoutButton);
-            logoutButton.addEventListener('click', async () => {
-                await fetch('/api/logout', { method: 'POST', credentials: 'include' });
-                window.location.href = '/login.html';
-            });
+            const logoutContainer = document.getElementById('logout-container');
+            if (logoutContainer) {
+                const logoutButton = document.createElement('button');
+                logoutButton.id = 'logout-btn';
+                logoutButton.textContent = 'Logout';
+                // Use gray gradient for logout
+                logoutButton.style.cssText = 'background: linear-gradient(180deg, #6c757d 0%, #5a6268 100%); border-color: #545b62; padding: 8px 16px; font-size: 0.9em;';
+                
+                logoutButton.addEventListener('mouseover', () => {
+                    logoutButton.style.background = 'linear-gradient(180deg, #5a6268 0%, #545b62 100%)';
+                });
+                logoutButton.addEventListener('mouseout', () => {
+                    logoutButton.style.background = 'linear-gradient(180deg, #6c757d 0%, #5a6268 100%)';
+                });
+
+                logoutContainer.appendChild(logoutButton);
+                
+                logoutButton.addEventListener('click', async () => {
+                    await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+                    window.location.href = '/login.html';
+                });
+            }
         }
 
     } catch (error) {
@@ -58,7 +71,7 @@ async function init() {
             document.querySelector('.controls').style.display = 'flex';
             
             const hostMsg = document.createElement('div');
-            hostMsg.innerHTML = `<p style="background:#28a745; color:white; padding:10px; border-radius:4px;">👑 You are the Host. Control playback and manage the queue!</p>`;
+            hostMsg.innerHTML = `<p style="background: linear-gradient(180deg, #28a745 0%, #218838 100%); color:white; padding:10px; border-radius:4px; border: 1px solid #1e7e34; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">👑 You are the Host. Control playback and manage the queue!</p>`;
             h1.parentNode.insertBefore(hostMsg, h1.nextSibling);
 
             // Load YouTube API dynamically
@@ -448,7 +461,16 @@ async function connectJellyfin() {
         // Update UI on success
         const btn = document.getElementById('jf-connect');
         btn.textContent = "Connected!";
-        btn.style.backgroundColor = "#28a745";
+        // Apply green gradient directly to background style
+        btn.style.background = "linear-gradient(180deg, #28a745 0%, #218838 100%)";
+        btn.style.borderColor = "#1e7e34";
+        btn.style.boxShadow = "none"; // Remove shadow for stable connected state
+
+        // Remove hover/active effects if they're overriding
+        btn.onmouseover = null;
+        btn.onmouseout = null;
+        btn.onmousedown = null;
+        btn.onmouseup = null;
         
         localStorage.setItem('jellyfin_url', url);
         
