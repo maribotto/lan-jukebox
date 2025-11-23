@@ -48,16 +48,51 @@
         #jellyfin-player-visual {
             display: none; /* Hidden by default */
             background: #333;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
+            position: absolute; /* Already absolute */
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0; /* Ensures it fills parent height */
+            /* Remove flex properties as content will be absolutely positioned */
+            /* align-items: center; */
+            /* justify-content: center; */
+            /* flex-direction: column; */
+            overflow: hidden; /* Ensure image doesn't overflow */
         }
         
         #jellyfin-player-visual img {
-            max-width: 50%;
-            max-height: 50%;
-            margin-bottom: 20px;
-            border-radius: 4px;
+            border-radius: 4px; /* Keep radius */
+
+            /* Positioning behind text */
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Cover the container */
+            z-index: 0;
+            opacity: 0.4; /* Slightly dim the background image */
+            filter: blur(5px); /* Add a slight blur */
+            transform: scale(1.05); /* Slightly scale to hide blur edges */
+        }
+
+        /* Ensure text is above image and truly centered */
+        #jellyfin-player-visual h2, #jellyfin-player-visual h3 {
+            position: absolute; /* Take text out of normal flow */
+            width: 100%; /* Ensure text takes full width */
+            text-align: center; /* Center horizontally */
+            left: 0;
+            transform: translateY(-50%); /* Adjust for vertical centering */
+            z-index: 1;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8); /* Make text more readable */
+            margin: 0; /* Reset margins */
+            padding: 0 10px; /* Add some padding */
+        }
+        #jellyfin-player-visual h2 {
+            top: 45%; /* Adjust vertical position */
+        }
+        #jellyfin-player-visual h3 {
+            top: 55%; /* Adjust vertical position */
         }
 
         /* Controls */
@@ -137,15 +172,17 @@
 <body>
 
 <div class="container">
-    <h1>Hybrid Media Player</h1>
+    <h1>LAN Jukebox</h1>
 
     <!-- Jellyfin Config -->
     <div id="jellyfin-login">
         <h3>Jellyfin Settings</h3>
-        <input type="text" id="jf-url" placeholder="Server URL (e.g., http://localhost:8096)">
-        <input type="text" id="jf-user" placeholder="Username">
-        <input type="password" id="jf-pass" placeholder="Password">
-        <button id="jf-connect">Connect & Load Library</button>
+        <form id="jf-connect-form" style="display: flex; flex-direction: column; gap: 10px;">
+            <input type="text" id="jf-url" placeholder="Server URL (e.g., http://localhost:8096)">
+            <input type="text" id="jf-user" placeholder="Username">
+            <input type="password" id="jf-pass" placeholder="Password">
+            <button type="submit" id="jf-connect">Connect & Load Library</button>
+        </form>
     </div>
 
     <!-- Player Area -->
@@ -164,12 +201,39 @@
     <!-- Hidden HTML5 Audio for Jellyfin -->
     <audio id="audio-player" style="display:none;"></audio>
 
+    <!-- Guest Now Playing -->
+    <div id="guest-now-playing" style="display: none; margin-bottom: 20px; padding: 15px; background: #2a2a2a; border-radius: 4px; text-align: center; border: 1px solid #444;">
+        <h3 style="margin: 0 0 5px 0; color: #aaa; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px;">Now Playing</h3>
+        <h2 id="guest-np-title" style="margin: 0; color: #fff; font-size: 1.4em; text-shadow: 0 2px 4px rgba(0,0,0,0.5);"></h2>
+        <h3 id="guest-np-artist" style="margin: 5px 0 0 0; color: #4da3ff; font-size: 1.1em;"></h3>
+    </div>
+
     <!-- Controls -->
     <div class="controls">
         <button id="btn-prev">Prev</button>
         <button id="btn-play">Play</button>
         <button id="btn-pause">Pause</button>
         <button id="btn-next">Next</button>
+    </div>
+
+    <!-- Add YouTube Video -->
+    <div style="margin-bottom: 20px; padding: 15px; background: #2a2a2a; border-radius: 4px;">
+        <form id="add-form" style="display: flex; gap: 10px;">
+            <input type="text" id="videoUrl" placeholder="YouTube URL" style="flex-grow: 1;">
+            <button type="submit" id="btn-add-yt">Add Video</button>
+        </form>
+    </div>
+
+    <!-- Jellyfin Search & Random -->
+    <div id="jf-actions" style="margin-bottom: 20px; padding: 15px; background: #2a2a2a; border-radius: 4px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; gap: 10px;">
+            <button id="btn-jf-random" style="background: #28a745;">🎲 Add Random Song</button>
+        </div>
+        <form id="jf-search-form" style="display: flex; gap: 10px;">
+            <input type="text" id="jf-search-input" placeholder="Search Jellyfin..." style="flex-grow: 1;">
+            <button type="submit" id="btn-jf-search">Search</button>
+        </form>
+        <ul id="jf-search-results" class="playlist" style="max-height: 150px; margin-top: 5px; display: none;"></ul>
     </div>
 
     <!-- Playlist -->
@@ -180,6 +244,5 @@
 </div>
 
 <script src="hybrid_player.js"></script>
-<script src="https://www.youtube.com/iframe_api"></script>
 </body>
 </html>
