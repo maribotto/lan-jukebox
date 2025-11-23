@@ -3,754 +3,294 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LAN Jukebox</title>
+    <title>LAN Jukebox - Hybrid Player</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Righteous&display=swap" rel="stylesheet">
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 900px; margin: 10px auto; padding: 10px; background-color: #f8f9fa; background-image: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.3) 0%, transparent 50%), url("data:image/svg+xml,%3Csvg width='400' height='400' viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M200 50 Q250 80 240 130 Q230 180 200 200 Q170 180 160 130 Q150 80 200 50 M200 200 Q230 220 240 270 Q250 320 200 350 Q150 320 160 270 Q170 220 200 200 M50 200 Q80 150 130 160 Q180 170 200 200 Q180 230 130 240 Q80 250 50 200 M350 200 Q320 150 270 160 Q220 170 200 200 Q220 230 270 240 Q320 250 350 200 M100 100 Q140 120 120 150 L80 110 Z M300 100 Q260 120 280 150 L320 110 Z M100 300 Q140 280 120 250 L80 290 Z M300 300 Q260 280 280 250 L320 290 Z' stroke='%23000000' stroke-width='2' stroke-opacity='0.08' fill='none'/%3E%3Ccircle cx='200' cy='200' r='15' stroke='%23000000' stroke-width='2' stroke-opacity='0.1' fill='none'/%3E%3Cpath d='M150 80 Q160 100 150 120 M250 80 Q240 100 250 120 M150 280 Q160 300 150 320 M250 280 Q240 300 250 320' stroke='%23000000' stroke-width='2.5' stroke-opacity='0.09' fill='none'/%3E%3C/svg%3E"), linear-gradient(135deg, rgba(248,249,250,0.95) 0%, rgba(212,220,230,0.95) 100%); background-attachment: fixed; min-height: 100vh; position: relative; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 900px; margin: 10px auto; padding: 10px; background-color: #f8f9fa; background-image: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.3) 0%, transparent 50%), url("data:image/svg+xml,%3Csvg width='400' height='400' viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M200 50 Q250 80 240 130 Q230 180 200 200 Q170 180 160 130 Q150 80 200 50 M200 200 Q230 220 240 270 Q250 320 200 350 Q150 320 160 270 Q170 220 200 200 M50 200 Q80 150 130 160 Q180 170 200 200 Q180 230 130 240 Q80 250 50 200 M350 200 Q320 150 270 160 Q220 170 200 200 Q220 230 270 240 Q320 250 350 200 M100 100 Q140 120 120 150 L80 110 Z M300 100 Q260 120 280 150 L320 110 Z M100 300 Q140 280 120 250 L80 290 Z M300 300 Q260 280 280 250 L320 290 Z' stroke='%23000000' stroke-width='2' stroke-opacity='0.08' fill='none'/%3E%3Ccircle cx='200' cy='200' r='15' stroke='%23000000' stroke-width='2' stroke-opacity='0.1' fill='none'/%3E%3Cpath d='M150 80 Q160 100 150 120 M250 80 Q240 100 250 120 M150 280 Q160 300 150 320 M250 280 Q240 300 250 320' stroke='%23000000' stroke-width='2.5' stroke-opacity='0.09' fill='none'/%3E%3C/svg%3E"), linear-gradient(135deg, rgba(248,249,250,0.95) 0%, rgba(212,220,230,0.95) 100%); background-attachment: fixed; min-height: 100vh; position: relative; color: #333; }
+        
         #particle-canvas { display: none; }
-        .container { position: relative; z-index: 2; }
-        .container { display: flex; gap: 30px; align-items: stretch; }
-        .player-wrapper { flex: 3; display: flex; flex-direction: column; }
-        .queue-wrapper { flex: 1.5; background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #000; }
-        #player { aspect-ratio: 16 / 9; width: 100%; background: #000; border-radius: 8px; }
-        #player-spacer { flex: 1; background: transparent; margin-top: 20px; }
-        #start-button { font-size: 1.2em; padding: 20px; width: 100%; cursor: pointer; background: linear-gradient(135deg, #e03858 0%, #e03828 100%); color: white; border: 1px solid #000; border-radius: 8px; font-weight: bold; margin-bottom: 20px; }
-        #start-button:hover { background: linear-gradient(135deg, #d02848 0%, #d02818 100%); }
-        .hidden { display: none; }
-        input[type="text"] { width: calc(100% - 110px); padding: 12px; border: 1px solid #ccc; border-radius: 4px; }
-        button { padding: 12px 18px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; font-weight: bold; }
-        ul { list-style: none; padding-left: 0; max-height: 400px; overflow-y: auto; }
-        li { background: #fdfdfd; padding: 10px; margin-bottom: 8px; border: 1px solid #eee; border-radius: 4px; font-size: 0.9em; display: flex; justify-content: space-between; align-items: center; }
-        li.now-playing { background: #fff8e5; border-color: #f0ad4e; font-weight: bold; }
-        #guest-message { background: linear-gradient(135deg, rgba(230,247,255,0.65) 0%, rgba(212,235,255,0.7) 100%), url("data:image/svg+xml,%3Csvg width='2000' height='2000' viewBox='0 0 2000 2000' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3CradialGradient id='rg1' cx='30%25' cy='30%25' r='70%25'%3E%3Cstop offset='0%25' style='stop-color:%2300d4ff;stop-opacity:0.6'/%3E%3Cstop offset='50%25' style='stop-color:%230099cc;stop-opacity:0.5'/%3E%3Cstop offset='100%25' style='stop-color:%23006699;stop-opacity:0.35'/%3E%3C/radialGradient%3E%3CradialGradient id='rg2' cx='70%25' cy='60%25' r='60%25'%3E%3Cstop offset='0%25' style='stop-color:%2300ffff;stop-opacity:0.65'/%3E%3Cstop offset='50%25' style='stop-color:%2300cccc;stop-opacity:0.5'/%3E%3Cstop offset='100%25' style='stop-color:%23008b8b;stop-opacity:0.4'/%3E%3C/radialGradient%3E%3ClinearGradient id='lg1' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%231e90ff;stop-opacity:0.5'/%3E%3Cstop offset='100%25' style='stop-color:%2300bfff;stop-opacity:0.55'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='2000' height='2000' fill='url(%23lg1)'/%3E%3Ccircle cx='600' cy='500' r='800' fill='url(%23rg1)'/%3E%3Cellipse cx='1400' cy='1200' rx='700' ry='600' fill='url(%23rg2)'/%3E%3Cpath d='M 0 1000 Q 500 800 1000 1000 T 2000 1000 L 2000 2000 L 0 2000 Z' fill='%230099cc' opacity='0.4'/%3E%3Cpath d='M 0 400 Q 400 200 800 400 T 1600 400 T 2000 200 L 2000 0 L 0 0 Z' fill='%2300d4ff' opacity='0.45'/%3E%3Cpath d='M 300 300 L 800 400 L 1200 200 L 1500 600 L 1100 900 L 500 800 Z' fill='%2300bfff' opacity='0.35'/%3E%3Cpath d='M 1000 1000 L 1400 1100 L 1800 900 L 1700 1300 L 1300 1400 L 900 1200 Z' fill='%231e90ff' opacity='0.4'/%3E%3C/svg%3E"); background-size: cover; background-position: center; border: 1px solid #b3e0ff; padding: 15px; border-radius: 8px; color: #0056b3; position: relative; z-index: 2; flex: 3; display: flex; flex-direction: column; height: 600px; }
-
-        .skip-button {
-            background: linear-gradient(135deg, #ffd54f 0%, #ffb300 100%);
-            color: #333;
-            width: 100%;
-            padding: 15px;
-            font-size: 1.1em;
-            margin-top: 15px;
+        
+        .container { 
+            width: 100%; 
+            max-width: 600px; 
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
             border: 1px solid #000;
-            font-family: 'Righteous', sans-serif;
+            position: relative; 
+            z-index: 2;
+            margin: 20px auto; /* Center the container with reasonable top/bottom margin */
         }
-        .skip-button:hover { background: linear-gradient(135deg, #ffc107 0%, #ffa000 100%); }
+        
+        h1, h2, h3 { font-family: 'Righteous', sans-serif; color: #333; }
+        h1 { margin-top: 0; font-size: 2.0em; }
+        
+        /* Player Container */
+        #player-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            background: #000;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        #youtube-player, #jellyfin-player-visual {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
 
-        .delete-btn {
-            background: #dc3545;
+        #jellyfin-player-visual {
+            display: none; /* Hidden by default */
+            background: #333;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+        }
+        
+        #jellyfin-player-visual img {
+            border-radius: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+            opacity: 0.4;
+            filter: blur(5px);
+            transform: scale(1.05);
+        }
+
+        #jellyfin-player-visual h2, #jellyfin-player-visual h3 {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            left: 0;
+            transform: translateY(-50%);
+            z-index: 1;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            margin: 0;
+            padding: 0 10px;
+            color: #fff; /* Override black color for dark bg */
+        }
+        #jellyfin-player-visual h2 { top: 45%; font-size: 2em; }
+        #jellyfin-player-visual h3 { top: 55%; font-size: 1.5em; color: #ddd; }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            padding: 12px 18px;
+            background: linear-gradient(180deg, #007bff 0%, #0062cc 100%);
             color: white;
-            border: none;
-            padding: 5px 10px;
-            font-size: 0.9em;
+            border: 1px solid #005cbf;
             border-radius: 4px;
             cursor: pointer;
-            margin-left: 10px;
+            font-size: 1em;
             font-weight: bold;
+            transition: all 0.2s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
-        .delete-btn:hover { background: #c82333; }
-        h1, h2, h3 { font-family: 'Righteous', sans-serif; }
-        h2 { margin-top: 0; }
-        a:hover { text-decoration: underline; }
+        button:hover { 
+            background: linear-gradient(180deg, #0069d9 0%, #0056b3 100%); 
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+        button:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+        /* Specific button overrides with gradients */
+        #btn-jf-random {
+            background: linear-gradient(180deg, #28a745 0%, #218838 100%);
+            border-color: #1e7e34;
+        }
+        #btn-jf-random:hover {
+            background: linear-gradient(180deg, #218838 0%, #1e7e34 100%);
+        }
+
+        #jf-connect {
+            /* Default blue/primary, JS changes it to green on success */
+        }
+
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box; /* Important for width: 100% */
+            height: 42px; /* Standardize height */
+        }
+
+        /* Ensure buttons within flex forms also match height */
+        #jf-connect-form button, #add-form button, #jf-search-form button {
+            height: 42px;
+            padding: 0 18px; /* Adjust padding to fit height while keeping horizontal padding */
+        }
+
+        /* Playlist */
+        .playlist {
+            list-style: none;
+            padding: 0;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            max-height: 400px;
+            overflow-y: auto;
+            background: #fff;
+        }
+        
+        .playlist li {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fdfdfd;
+            color: #333;
+        }
+        
+        .playlist li:last-child { border-bottom: none; }
+        
+        .playlist li.active {
+            background: #fff8e5;
+            border-color: #f0ad4e;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .badge {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-right: 5px;
+        }
+        .badge-yt { background: #ff0000; color: white; }
+        .badge-jf { background: #00a4dc; color: white; }
+
+        /* Jellyfin Login Form */
+        #jellyfin-login, #add-video-container, #jf-actions {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #fff; /* White bg for cards */
+            border-radius: 8px;
+            border: 1px solid #eee;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        #jf-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        /* Specific override for dark sections if needed, but standardizing on light theme */
+        #guest-now-playing {
+            background: #fff;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        #guest-now-playing h2 { color: #333; text-shadow: none; }
+        #guest-now-playing h3 { color: #007bff; text-shadow: none; }
+
     </style>
 </head>
 <body>
-    <div id="particle-canvas"></div>
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; position: relative; z-index: 2;">
-        <h1 style="margin: 0;">🎬 LAN YouTube Jukebox</h1>
-        <button id="logout-btn" class="hidden" style="background: #6c757d; padding: 8px 16px;">Logout</button>
-    </div>
-    <p id="status-message" style="position: relative; z-index: 2;">Loading...</p>
+<div id="particle-canvas"></div>
+<div class="container">
+    <div id="logout-container" style="position: absolute; top: 20px; right: 20px;"></div>
+    <h1>LAN Jukebox</h1>
 
-    <!-- HOST VIEW -->
-    <div class="container hidden" id="host-container">
-        <div class="player-wrapper">
-            <button id="start-button">START PLAYER</button>
-            <div id="player"></div>
-            <h3 id="current-video-title" style="margin-top: 10px; margin-bottom: 8px; font-size: 1.3em;"></h3>
-            <a id="current-video-url" href="" target="_blank" style="font-size: 1.05em; color: #007bff; margin: 0; word-break: break-all; display: none; text-decoration: none;"></a>
-            <div id="player-spacer"></div>
-            <button id="skip-button" class="skip-button hidden">SKIP ⏭️</button>
-        </div>
-
-        <div class="queue-wrapper">
-            <h2>Add Video</h2>
-            <form id="add-form">
-                <input type="text" id="videoUrl" placeholder="YouTube URL..." required>
-                <button type="submit">Add</button>
-            </form>
-            <hr style="margin: 20px 0;">
-            <h2>Queue</h2>
-            <ul id="queue-list">
-                <li>The queue is empty.</li>
-            </ul>
-        </div>
+    <!-- Jellyfin Config -->
+    <div id="jellyfin-login">
+        <h3>Jellyfin Settings</h3>
+        <form id="jf-connect-form" style="display: flex; flex-direction: column; gap: 10px;">
+            <input type="text" id="jf-url" placeholder="Server URL (e.g., http://localhost:8096)">
+            <input type="text" id="jf-user" placeholder="Username">
+            <input type="password" id="jf-pass" placeholder="Password">
+            <button type="submit" id="jf-connect">Connect & Load Library</button>
+        </form>
     </div>
 
-    <!-- GUEST VIEW -->
-    <div class="container hidden" id="guest-container">
-        <div id="guest-message">
-            <h2>You are a guest</h2>
-            <p>You can see the queue and add videos, but only the "host" machine can play music.</p>
-
-            <div id="guest-now-playing" style="margin-top: 20px; padding: 15px; background: #fff; border-radius: 8px; border: 2px solid #007bff;">
-                <h3 style="margin-top: 0; color: #007bff;">🎵 Currently Playing</h3>
-                <p id="guest-current-title" style="font-size: 1.3em; margin: 10px 0 8px 0;">Nothing is playing</p>
-                <a id="guest-current-url" href="" target="_blank" style="font-size: 1.05em; color: #007bff; margin: 0; word-break: break-all; display: none; text-decoration: none;"></a>
-            </div>
-        </div>
-
-        <div class="queue-wrapper">
-            <h2>Add Video</h2>
-            <form id="guest-add-form">
-                <input type="text" id="guest-videoUrl" placeholder="YouTube URL..." required>
-                <button type="submit">Add</button>
-            </form>
-            <hr style="margin: 20px 0;">
-            <h2>Queue</h2>
-            <ul id="guest-queue-list">
-                <li>The queue is empty.</li>
-            </ul>
-        </div>
-    </div>
-
-    <script>
-        // Define variables globally
-        let player;
-        let queue = [];
-        let isPlayerReady = false;
-        let isHostGlobal = false; // NEW: Stores if we are the host
-        let playbackTimeout = null; // Timeout for auto-skip if video doesn't start
-        let isCurrentlyPlaying = false; // Track if a video is currently playing
-        let previousQueueLength = 0; // Track previous queue length for auto-start detection
-
-        const startButton = document.getElementById('start-button');
-        const skipButton = document.getElementById('skip-button');
-        const addForm = document.getElementById('add-form');
-        const guestAddForm = document.getElementById('guest-add-form');
-        const urlInput = document.getElementById('videoUrl');
-        const guestUrlInput = document.getElementById('guest-videoUrl');
-        const queueList = document.getElementById('queue-list');
-        const guestQueueList = document.getElementById('guest-queue-list');
-        const currentVideoTitle = document.getElementById('current-video-title');
-        const currentVideoUrl = document.getElementById('current-video-url');
-        const statusMessage = document.getElementById('status-message');
-        const hostContainer = document.getElementById('host-container');
-        const guestContainer = document.getElementById('guest-container');
-        const guestCurrentUrl = document.getElementById('guest-current-url');
-
-        // ------ 1. CHECK AUTH STATUS ON LOAD ------
-
-        // This function runs as soon as the page loads
-        window.addEventListener('DOMContentLoaded', async () => {
-            // First, check if authentication is required and if user is authenticated
-            try {
-                const authResponse = await fetch('/api/auth-status', {
-                    credentials: 'include'
-                });
-                const authData = await authResponse.json();
-
-                if (authData.requireLogin && !authData.authenticated) {
-                    // Redirect to login page if not authenticated
-                    window.location.href = '/login.html';
-                    return;
-                }
-
-                // Show logout button if login is required and user is authenticated
-                if (authData.requireLogin && authData.authenticated) {
-                    document.getElementById('logout-btn').classList.remove('hidden');
-                }
-            } catch (error) {
-                console.error('Error checking auth status:', error);
-            }
-
-            // Now check if user is host or guest
-            try {
-                const response = await fetch('/api/status', {
-                    credentials: 'include'
-                });
-                const data = await response.json();
-
-                if (data.isHost) {
-                    // USER IS HOST
-                    isHostGlobal = true;
-                    statusMessage.textContent = 'You are the host. Press Start Player.';
-                    hostContainer.classList.remove('hidden');
-                    loadYouTubeAPI(); // Load the YouTube API
-                } else {
-                    // USER IS GUEST
-                    statusMessage.textContent = `You are a guest (IP: ${data.yourIp}). You can add videos to the queue.`;
-                    guestContainer.classList.remove('hidden');
-                }
-            } catch (error) {
-                console.error('Error fetching status:', error);
-                statusMessage.textContent = 'Error connecting to the server.';
-            }
-            
-            // The queue list is updated for everyone
-            updateQueueList();
-            setInterval(updateQueueList, 2000); // Update every 2s for faster now-playing updates
-        });
-
-        // ------ 2. YOUTUBE API STARTUP (host only) ------
+    <!-- Player Area -->
+    <div id="player-container">
+        <!-- YouTube Iframe will be injected here -->
+        <div id="youtube-player"></div>
         
-        function loadYouTubeAPI() {
-            const tag = document.createElement('script');
-            tag.src = "https://www.youtube.com/iframe_api";
-            const firstScriptTag = document.getElementsByTagName('script')[0];
-            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-        }
-
-        // This is called when the API has loaded
-        function onYouTubeIframeAPIReady() {
-            startButton.addEventListener('click', () => {
-                startButton.classList.add('hidden');
-                statusMessage.textContent = 'You are the host.'; // Remove "Press Start Player" part
-                player = new YT.Player('player', {
-                    height: '390', width: '640', videoId: '',
-                    playerVars: { 'playsinline': 1, 'autoplay': 1, 'controls': 1, 'origin': window.location.origin },
-                    events: { 'onReady': onPlayerReady, 'onStateChange': onPlayerStateChange, 'onError': onPlayerError }
-                });
-            });
-        }
-
-        function onPlayerReady(event) {
-            isPlayerReady = true;
-            console.log('Player is ready.');
-            skipButton.classList.remove('hidden'); // NEW: Show skip button
-            document.getElementById('player-spacer').classList.add('hidden'); // Hide spacer when skip button appears
-            skipButton.addEventListener('click', playNextVideo); // NEW: Add functionality
-            playNextVideo();
-        }
-
-        function onPlayerStateChange(event) {
-            if (event.data == YT.PlayerState.ENDED) {
-                clearTimeout(playbackTimeout); // Clear timeout when video ends normally
-                isCurrentlyPlaying = false;
-                playNextVideo();
-            } else if (event.data == YT.PlayerState.PLAYING) {
-                clearTimeout(playbackTimeout); // Clear timeout when video starts playing
-                isCurrentlyPlaying = true;
-            } else if (event.data == YT.PlayerState.PAUSED || event.data == YT.PlayerState.UNSTARTED) {
-                isCurrentlyPlaying = false;
-            }
-        }
-
-        async function onPlayerError(event) {
-            clearTimeout(playbackTimeout); // Clear timeout on error
-            console.error('Player error:', event.data);
-
-            // YouTube error codes explained with user-friendly messages
-            const errorMessages = {
-                2: 'Invalid video ID or malformed URL',
-                5: 'HTML5 player error (browser compatibility issue)',
-                100: 'Video not found, private, or deleted',
-                101: 'Embedding disabled by video owner or age-restricted',
-                150: 'Embedding disabled by video owner or region-locked'
-            };
-
-            const errorExplanations = {
-                2: 'The video link may be incorrect or corrupted.',
-                5: 'Try refreshing the page or using a different browser.',
-                100: 'This video is unavailable. It may be private, deleted, or region-restricted.',
-                101: 'The video owner has disabled embedding, or it requires age verification.',
-                150: 'The video cannot be embedded due to owner restrictions or geographic limitations.'
-            };
-
-            const errorMsg = errorMessages[event.data] || 'Unknown playback error';
-            const explanation = errorExplanations[event.data] || 'Please try a different video.';
-
-            currentVideoTitle.textContent = `❌ Error ${event.data}: ${errorMsg}`;
-            console.error(`YouTube Player Error ${event.data}: ${errorMsg}\n${explanation}`);
-
-            // Check if there are more videos in queue before retrying
-            currentVideoTitle.textContent += ' Skipping in 3s...';
-            setTimeout(async () => {
-                const queueResponse = await fetch('/api/queue', {
-                    credentials: 'include'
-                });
-                const queueData = await queueResponse.json();
-                if (queueData.queue && queueData.queue.length > 0) {
-                    currentVideoTitle.textContent = '⏭️ Skipping to next video...';
-                    playNextVideo();
-                } else {
-                    currentVideoTitle.textContent = `❌ ${errorMsg}. Queue is empty.`;
-                    isCurrentlyPlaying = false;
-                    player.stopVideo();
-                }
-            }, 3000);
-        }
-
-        // ------ 3. QUEUE MANAGEMENT ------
-
-        async function playNextVideo() {
-            // This function only runs on the host machine
-            if (!isPlayerReady) return;
-
-            // Clear any existing timeout
-            clearTimeout(playbackTimeout);
-
-            try {
-                // Requesting next video. Server will block if not host.
-                const response = await fetch('/api/next', {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-                if (response.status === 403) {
-                     currentVideoTitle.textContent = "Error: Only the host can control playback. Is config.json correct?";
-                     return;
-                }
-                const data = await response.json();
-                if (data.nextVideo) {
-                    const videoId = extractVideoID(data.nextVideo.url);
-                    if (videoId) {
-                        player.loadVideoById(videoId);
-                        currentVideoTitle.textContent = `Now playing: ${data.nextVideo.title || videoId}`;
-                        currentVideoUrl.textContent = data.nextVideo.url;
-                        currentVideoUrl.href = data.nextVideo.url;
-                        currentVideoUrl.style.display = 'block';
-
-                        // Set timeout: if video doesn't start playing in 10 seconds, skip it
-                        playbackTimeout = setTimeout(async () => {
-                            console.warn('Video failed to start within 10 seconds. Auto-skipping...');
-                            currentVideoTitle.textContent = `⏭️ Video timed out (didn't start). Skipping...`;
-
-                            // Check if there are more videos in queue before retrying
-                            await new Promise(resolve => setTimeout(resolve, 2000));
-                            const queueResponse = await fetch('/api/queue', {
-                                credentials: 'include'
-                            });
-                            const queueData = await queueResponse.json();
-                            if (queueData.length > 0) {
-                                playNextVideo();
-                            } else {
-                                currentVideoTitle.textContent = `⏭️ Video timed out. Queue is empty.`;
-                                isCurrentlyPlaying = false;
-                                player.stopVideo();
-                            }
-                        }, 10000);
-                    } else {
-                        playNextVideo(); // Skipping invalid link
-                    }
-                } else {
-                    currentVideoTitle.textContent = 'Queue is empty. Add more videos!';
-                    currentVideoUrl.textContent = '';
-                    currentVideoUrl.href = '';
-                    currentVideoUrl.style.display = 'none';
-                    isCurrentlyPlaying = false;
-                    player.stopVideo();
-                }
-            } catch (error) { console.error('Error fetching next video:', error); }
-            updateQueueList();
-        }
-
-        // NEW: Function to delete a video
-        async function deleteVideo(index) {
-            console.log(`Requesting delete for video at index: ${index}`);
-            try {
-                await fetch('/api/delete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ index: index })
-                });
-                updateQueueList(); // Update list immediately after deletion
-            } catch (error) {
-                console.error('Error deleting video:', error);
-            }
-        }
-
-        // Add video handler function
-        async function handleAddVideo(form, input) {
-            const videoUrl = input.value;
-            if (!videoUrl) return;
-
-            try {
-                // Show loading indicator
-                const originalText = form.querySelector('button').textContent;
-                form.querySelector('button').textContent = 'Loading...';
-
-                const response = await fetch('/api/add', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ videoUrl: videoUrl })
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    alert(`❌ Failed to add video:\n${data.message || 'Check the URL.'}`);
-                    form.querySelector('button').textContent = originalText;
-                    return;
-                }
-
-                // Show warning if embed check didn't pass
-                if (!data.embedVerified) {
-                    alert(`⚠️ Video Added with Warning\n\n${data.message}\n\nCommon reasons videos fail to play:\n• Age-restricted content (requires login)\n• Music videos restricted by record labels\n• Premium/YouTube Music exclusive content\n• Owner disabled embedding\n\nThe video has been added to queue but may skip automatically if it cannot play.`);
-                } else {
-                    // Show brief success message for verified videos
-                    console.log('✅ Video added and verified:', data.video.title);
-                }
-
-                form.querySelector('button').textContent = originalText;
-                input.value = '';
-
-                // If we are host and nothing is currently playing, start playback
-                if (isHostGlobal && isPlayerReady && !isCurrentlyPlaying) {
-                    console.log('Auto-starting playback because queue was empty');
-                    await playNextVideo(); // Wait for playback to start before updating
-                } else {
-                    updateQueueList(); // Update list for everyone immediately
-                }
-            } catch (error) {
-                console.error('Error adding video:', error);
-                form.querySelector('button').textContent = 'Add';
-            }
-        }
-
-        // Add video (for all)
-        addForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await handleAddVideo(addForm, urlInput);
-        });
-
-        guestAddForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await handleAddVideo(guestAddForm, guestUrlInput);
-        });
-
-        // MODIFIED: Queue list update (now shows delete buttons for host and currently playing for guests)
-        async function updateQueueList() {
-            try {
-                const response = await fetch('/api/queue', {
-                    credentials: 'include'
-                });
-                const data = await response.json();
-
-                // Handle new API format (object with queue and currentlyPlaying)
-                queue = data.queue || data; // Fallback to old format if needed
-                const currentlyPlaying = data.currentlyPlaying || null;
-
-                // Update guest's "currently playing" display
-                if (!isHostGlobal) {
-                    const guestCurrentTitle = document.getElementById('guest-current-title');
-                    if (currentlyPlaying) {
-                        guestCurrentTitle.textContent = currentlyPlaying.title || currentlyPlaying.url;
-                        guestCurrentTitle.style.fontWeight = 'bold';
-                        guestCurrentTitle.style.color = '#007bff';
-                        guestCurrentUrl.textContent = currentlyPlaying.url;
-                        guestCurrentUrl.href = currentlyPlaying.url;
-                        guestCurrentUrl.style.display = 'block';
-                    } else {
-                        guestCurrentTitle.textContent = 'Nothing is playing';
-                        guestCurrentTitle.style.fontWeight = 'normal';
-                        guestCurrentTitle.style.color = '#666';
-                        guestCurrentUrl.textContent = '';
-                        guestCurrentUrl.href = '';
-                        guestCurrentUrl.style.display = 'none';
-                    }
-                }
-
-                // NEW: Auto-start playback if queue went from empty to having videos (for host)
-                if (isHostGlobal && isPlayerReady && !isCurrentlyPlaying) {
-                    if (previousQueueLength === 0 && queue.length > 0) {
-                        console.log('Auto-starting playback because queue now has videos (detected via polling)');
-                        playNextVideo();
-                    }
-                }
-                previousQueueLength = queue.length;
-
-                // Update both queue lists (host and guest)
-                const lists = isHostGlobal ? [queueList] : [guestQueueList];
-
-                lists.forEach(list => {
-                    list.innerHTML = '';
-                    if (queue.length === 0) {
-                        list.innerHTML = '<li>The queue is empty.</li>';
-                        return;
-                    }
-                    queue.forEach((video, index) => {
-                        const li = document.createElement('li');
-
-                        // The part containing the video title
-                        const titleSpan = document.createElement('span');
-                        titleSpan.textContent = `${index + 1}: ${video.title || video.url}`;
-                        li.appendChild(titleSpan);
-
-                        if (index === 0) {
-                            li.classList.add('now-playing');
-                            titleSpan.textContent = `(Next up) ${video.title || video.url}`;
-                        }
-
-                        // NEW: Add delete button for host (but not for the "Next up" video)
-                        if (isHostGlobal && index > 0) {
-                            const deleteBtn = document.createElement('button');
-                            deleteBtn.textContent = 'X';
-                            deleteBtn.className = 'delete-btn';
-                            deleteBtn.onclick = () => deleteVideo(index);
-                            li.appendChild(deleteBtn);
-                        }
-
-                        list.appendChild(li);
-                    });
-                });
-            } catch (error) {
-                console.error('Error updating queue list:', error);
-            }
-        }
-
-        // Helper function for parsing video ID
-        function extractVideoID(url) {
-            let videoId = null;
-            try {
-                const urlObj = new URL(url); const hostname = urlObj.hostname; const pathname = urlObj.pathname;
-                if (hostname.includes('youtu.be')) { videoId = pathname.slice(1); }
-                else if (hostname.includes('youtube.com')) {
-                    if (pathname.startsWith('/watch')) { videoId = urlObj.searchParams.get('v'); }
-                    else if (pathname.startsWith('/embed/')) { videoId = pathname.split('/')[2]; }
-                    else if (pathname.startsWith('/shorts/')) { videoId = pathname.split('/')[2]; }
-                }
-                if (videoId) { videoId = videoId.split('?')[0].split('&')[0]; }
-                return videoId;
-            } catch (e) { return null; }
-        }
-
-        // ------ LOGOUT HANDLER ------
-        document.getElementById('logout-btn').addEventListener('click', async () => {
-            try {
-                const response = await fetch('/api/logout', {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    // Redirect to login page after logout
-                    window.location.href = '/login.html';
-                } else {
-                    alert('Logout failed: ' + data.message);
-                }
-            } catch (error) {
-                console.error('Logout error:', error);
-                alert('Logout failed. Please try again.');
-            }
-        });
-
-        // Simple CSS animation (WebGL removed for stability)
-        // Background animation is now handled purely by CSS gradients and keyframes
-        // This is much more stable and performant than WebGL
-        const canvas = document.getElementById('particle-canvas');
-        if (canvas) {
-            // Canvas is just a div now, no WebGL code needed
-            console.log('Using CSS-based background animation for better stability');
-        }
-
-        if (false) { // WebGL code disabled
-            let resizeTimeout = null;
-            function resizeCanvas() {
-                const width = window.innerWidth;
-                const height = window.innerHeight;
-
-                // Only update if size actually changed to prevent WebGL context reset
-                if (canvas.width !== width || canvas.height !== height) {
-                    canvas.width = width;
-                    canvas.height = height;
-                    gl.viewport(0, 0, width, height);
-                }
-            }
-
-            function handleResize() {
-                // Debounce resize to avoid excessive calls
-                if (resizeTimeout) {
-                    clearTimeout(resizeTimeout);
-                }
-                resizeTimeout = setTimeout(resizeCanvas, 100);
-            }
-
-            resizeCanvas();
-            window.addEventListener('resize', handleResize);
-
-            const vertexShaderSource = `
-                attribute vec2 a_position;
-                void main() {
-                    gl_Position = vec4(a_position, 0.0, 1.0);
-                }
-            `;
-
-            const fragmentShaderSource = `
-                precision mediump float;
-                uniform float u_time;
-                uniform vec2 u_resolution;
-
-                float noise(vec2 p) {
-                    return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
-                }
-
-                float smoothNoise(vec2 p) {
-                    vec2 i = floor(p);
-                    vec2 f = fract(p);
-                    f = f * f * (3.0 - 2.0 * f);
-                    float a = noise(i);
-                    float b = noise(i + vec2(1.0, 0.0));
-                    float c = noise(i + vec2(0.0, 1.0));
-                    float d = noise(i + vec2(1.0, 1.0));
-                    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
-                }
-
-                float fbm(vec2 p) {
-                    float value = 0.0;
-                    float amplitude = 0.5;
-                    for(int i = 0; i < 5; i++) {
-                        value += amplitude * smoothNoise(p);
-                        p *= 2.0;
-                        amplitude *= 0.5;
-                    }
-                    return value;
-                }
-
-                void main() {
-                    vec2 uv = gl_FragCoord.xy / u_resolution;
-                    vec2 center = vec2(0.5, 0.5);
-                    float dist = length(uv - center);
-
-                    if(dist > 0.7) {
-                        discard;
-                    }
-
-                    vec2 p = uv * 4.0 + u_time * 0.1;
-                    float n = fbm(p);
-
-                    vec3 color1 = vec3(0.9, 0.92, 0.95);
-                    vec3 color2 = vec3(0.7, 0.75, 0.82);
-                    vec3 color = mix(color1, color2, n);
-
-                    float alpha = (1.0 - dist / 0.7) * 0.3 * smoothstep(0.0, 0.5, n);
-
-                    gl_FragColor = vec4(color, alpha);
-                }
-            `;
-
-            function createShader(gl, type, source) {
-                const shader = gl.createShader(type);
-                gl.shaderSource(shader, source);
-                gl.compileShader(shader);
-                if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-                    console.error('Shader compile error:', gl.getShaderInfoLog(shader));
-                    gl.deleteShader(shader);
-                    return null;
-                }
-                return shader;
-            }
-
-            const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-            const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-
-            const program = gl.createProgram();
-            gl.attachShader(program, vertexShader);
-            gl.attachShader(program, fragmentShader);
-            gl.linkProgram(program);
-
-            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-                console.error('Program link error:', gl.getProgramInfoLog(program));
-            }
-
-            const positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
-            const timeUniformLocation = gl.getUniformLocation(program, 'u_time');
-            const resolutionUniformLocation = gl.getUniformLocation(program, 'u_resolution');
-
-            const positionBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-            const positions = [
-                -1, -1,
-                1, -1,
-                -1, 1,
-                -1, 1,
-                1, -1,
-                1, 1,
-            ];
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-
-            gl.enable(gl.BLEND);
-            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-
-            let animationFrameId;
-            let errorCount = 0;
-            const MAX_ERRORS = 10;
-
-            function render(time) {
-                // Stop animation if too many errors
-                if (errorCount >= MAX_ERRORS) {
-                    console.error('WebGL animation stopped due to too many errors');
-                    return;
-                }
-
-                try {
-                    time *= 0.001;
-
-                    // Check if WebGL context is still valid
-                    if (gl.isContextLost()) {
-                        console.warn('WebGL context lost');
-                        errorCount++;
-                        animationFrameId = requestAnimationFrame(render);
-                        return;
-                    }
-
-                    gl.clearColor(0, 0, 0, 0);
-                    gl.clear(gl.COLOR_BUFFER_BIT);
-
-                    gl.useProgram(program);
-
-                    gl.enableVertexAttribArray(positionAttributeLocation);
-                    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-                    gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
-
-                    gl.uniform1f(timeUniformLocation, time);
-                    gl.uniform2f(resolutionUniformLocation, canvas.width, canvas.height);
-
-                    gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-                    // Check for WebGL errors
-                    const error = gl.getError();
-                    if (error !== gl.NO_ERROR) {
-                        console.warn('WebGL error:', error);
-                        errorCount++;
-                    } else {
-                        // Reset error count on successful render
-                        errorCount = Math.max(0, errorCount - 0.1);
-                    }
-
-                    animationFrameId = requestAnimationFrame(render);
-                } catch (e) {
-                    console.error('WebGL render error:', e);
-                    errorCount++;
-                    animationFrameId = requestAnimationFrame(render);
-                }
-            }
-
-            animationFrameId = requestAnimationFrame(render);
-
-            // Cleanup on page unload
-            window.addEventListener('beforeunload', () => {
-                if (animationFrameId) {
-                    cancelAnimationFrame(animationFrameId);
-                }
-            });
-
-            // Allow user to disable animation by clicking canvas
-            canvas.addEventListener('click', () => {
-                if (animationFrameId) {
-                    cancelAnimationFrame(animationFrameId);
-                    animationFrameId = null;
-                    canvas.style.opacity = '0';
-                    setTimeout(() => canvas.remove(), 300);
-                    console.log('WebGL animation disabled by user');
-                }
-            });
-            canvas.title = 'Click to disable background animation';
-            canvas.style.cursor = 'pointer';
-        }
-    </script>
+        <!-- Jellyfin Visuals (Cover Art) -->
+        <div id="jellyfin-player-visual">
+            <img id="jf-cover" src="" alt="Album Art">
+            <h2 id="jf-title">No Song Playing</h2>
+            <h3 id="jf-artist">Unknown Artist</h3>
+        </div>
+    </div>
+
+    <!-- Hidden HTML5 Audio for Jellyfin -->
+    <audio id="audio-player" style="display:none;"></audio>
+
+    <!-- Guest Now Playing -->
+    <div id="guest-now-playing" style="display: none; margin-bottom: 20px; padding: 15px; background: #2a2a2a; border-radius: 4px; text-align: center; border: 1px solid #444;">
+        <h3 style="margin: 0 0 5px 0; color: #aaa; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px;">Now Playing</h3>
+        <h2 id="guest-np-title" style="margin: 0; color: #fff; font-size: 1.4em; text-shadow: 0 2px 4px rgba(0,0,0,0.5);"></h2>
+        <h3 id="guest-np-artist" style="margin: 5px 0 0 0; color: #4da3ff; font-size: 1.1em;"></h3>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button id="btn-prev">Prev</button>
+        <button id="btn-play">Play</button>
+        <button id="btn-pause">Pause</button>
+        <button id="btn-next">Next</button>
+    </div>
+
+    <!-- Add YouTube Video -->
+    <div id="add-video-container" style="margin-bottom: 20px; padding: 15px; border-radius: 4px;">
+        <form id="add-form" style="display: flex; gap: 10px;">
+            <input type="text" id="videoUrl" placeholder="YouTube URL" style="flex-grow: 1;">
+            <button type="submit" id="btn-add-yt">Add Video</button>
+        </form>
+    </div>
+
+    <!-- Jellyfin Search & Random -->
+    <div id="jf-actions">
+        <div style="display: flex; gap: 10px;">
+            <button id="btn-jf-random" style="background: linear-gradient(180deg, #28a745 0%, #218838 100%); border-color: #1e7e34;">🎲 Add Random Song</button>
+        </div>
+        <form id="jf-search-form" style="display: flex; gap: 10px;">
+            <input type="text" id="jf-search-input" placeholder="Search Jellyfin..." style="flex-grow: 1;">
+            <button type="submit" id="btn-jf-search">Search</button>
+        </form>
+        <ul id="jf-search-results" class="playlist" style="max-height: 150px; margin-top: 5px; display: none;"></ul>
+    </div>
+
+    <!-- Playlist -->
+    <h3>Queue</h3>
+    <ul id="playlist" class="playlist">
+        <!-- Items will be added here via JS -->
+    </ul>
+</div>
+
+<script src="hybrid_player.js"></script>
 </body>
 </html>
