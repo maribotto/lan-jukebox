@@ -110,18 +110,7 @@ const publicDir = process.pkg ? path.join(path.dirname(process.execPath), 'publi
 console.log(`Serving static files from: ${publicDir}`);
 
 // --- MOBILE DETECTION AND REDIRECT ---
-app.get('/', (req, res, next) => {
-    const userAgent = req.headers['user-agent'] || '';
-    const isMobile = /Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
-
-    // Allow explicit desktop override via ?desktop=1
-    const forceDesktop = req.query.desktop === '1';
-
-    if (isMobile && !forceDesktop) {
-        return res.sendFile(path.join(publicDir, 'mobile.html'));
-    }
-
-    // Desktop version
+app.get('/', (req, res) => {
     return res.sendFile(path.join(publicDir, 'index.html'));
 });
 
@@ -231,21 +220,137 @@ app.get('/api/auth-status', (req, res) => {
 
 // NEW ROUTE: Tells the browser if it's "host" or "guest"
 app.get('/api/status', requireAuth, (req, res) => {
+    // Log the client IP and the resolved host IP for debugging
+    console.log(`[API/Status] Client IP: ${req.ip}, Resolved Host IP: ${resolvedHostIp}`);
     res.json({
         isHost: isHost(req),
         yourIp: req.ip // Sending the user's IP for info
     });
 });
 
+// NEW ROUTE: Image Proxy for Jellyfin
+app.get('/api/jellyfin/image-proxy', async (req, res) => {
+    const { url } = req.query;
+
+    if (!url) {
+        return res.status(400).send('Missing url parameter');
+    }
+
+    // console.log(`[Image Proxy] Fetching: ${url}`); // Removed for security
+
+    try {
+        const response = await fetch(url);
+        
+        // console.log(`[Image Proxy] Status: ${response.status}`); // Removed for security
+
+        if (!response.ok) {
+            return res.status(response.status).send('Failed to fetch image');
+        }
+
+        // Forward headers
+        const contentType = response.headers.get('content-type');
+        if (contentType) res.setHeader('Content-Type', contentType);
+
+        // Pipe the image data
+        response.body.pipe(res);
+
+    } catch (error) {
+        console.error('Image Proxy Error:', error.message);
+        res.status(500).send('Image proxy failed');
+    }
+});
+
+// NEW ROUTE: Jellyfin Proxy to bypass CORS
+app.post('/api/jellyfin/proxy', async (req, res) => {
+    const { baseUrl, endpoint, method, headers, body } = req.body;
+
+    if (!baseUrl || !endpoint) {
+        return res.status(400).json({ success: false, message: 'Missing baseUrl or endpoint' });
+    }
+
+    try {
+        const targetUrl = `${baseUrl}${endpoint}`;
+        
+        const fetchOptions = {
+            method: method || 'GET',
+            headers: headers || {}
+        };
+
+        if (body && (method === 'POST' || method === 'PUT')) {
+            fetchOptions.body = JSON.stringify(body);
+        }
+
+        console.log(`--- PROXY REQUEST ---`);
+        console.log(`URL: ${targetUrl}`);
+        console.log(`Method: ${fetchOptions.method}`);
+        // Sensitive Headers and Body logging removed
+        // console.log(`Headers:`, fetchOptions.headers);
+        // console.log(`Body:`, fetchOptions.body);
+
+        const response = await fetch(targetUrl, fetchOptions);
+        
+        console.log(`--- PROXY RESPONSE ---`);
+        console.log(`Status: ${response.status}`);
+
+        // Forward status
+        res.status(response.status);
+
+        // Attempt to parse as JSON, fallback to text
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            const data = await response.json();
+            // Sensitive Response Data logging removed
+            // console.log(`Response Data:`, JSON.stringify(data).substring(0, 200) + '...');
+            res.json(data);
+        } else {
+            const text = await response.text();
+            // Sensitive Response Text logging removed
+            // console.log(`Response Text:`, text.substring(0, 200) + '...');
+            res.send(text);
+        }
+
+    } catch (error) {
+        console.error('Jellyfin Proxy Error:', error.message);
+        res.status(500).json({ success: false, message: 'Proxy failed: ' + error.message });
+    }
+});
+
 // MODIFIED: Now fetches the video title and validates embeddability
 app.post('/api/add', requireAuth, async (req, res) => { // Changed to async function
+    // NEW: Support for generic items (Hybrid Player)
+    if (req.body.item) {
+        const item = req.body.item;
+        queue.push(item);
+        console.log(`Added generic item to queue (requester: ${req.ip}): ${item.title}`);
+        return res.status(201).json({
+            success: true,
+            message: 'Item added',
+            video: item
+        });
+    }
+
     const { videoUrl } = req.body;
 
     if (!videoUrl || !(videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be'))) {
         return res.status(400).json({ success: false, message: 'Invalid URL - must be a YouTube link' });
     }
 
-    let title = 'Untitled video';
+    // Try to extract video ID first
+    let videoId = null;
+    try {
+        const urlObj = new URL(videoUrl);
+        if (urlObj.hostname.includes('youtu.be')) {
+            videoId = urlObj.pathname.slice(1);
+        } else {
+            videoId = urlObj.searchParams.get('v');
+        }
+    } catch (e) {
+        // Fallback regex
+        const match = videoUrl.match(/[?&]v=([^&]+)/);
+        if (match) videoId = match[1];
+    }
+
+    let title = `YouTube Video (${videoId || 'Unknown'})`;
     let embedCheckPassed = false;
 
     // NEW: Try to fetch video title from YouTube's oEmbed API
@@ -258,30 +363,28 @@ app.post('/api/add', requireAuth, async (req, res) => { // Changed to async func
             const oembedData = await oembedRes.json();
             title = oembedData.title; // Fetched title!
             embedCheckPassed = true;
-        } else if (oembedRes.status === 401 || oembedRes.status === 404) {
-            // Video not embeddable or not found
-            console.warn(`Video not embeddable or unavailable: ${videoUrl} (status ${oembedRes.status})`);
-            return res.status(400).json({
-                success: false,
-                message: 'Video is private, deleted, or embedding is disabled by the owner'
-            });
         } else {
-            // Other errors - try fallback
-            console.warn(`oEmbed returned ${oembedRes.status}, trying fallback`);
-            const urlObj = new URL(videoUrl);
-            if (urlObj.hostname.includes('youtu.be')) {
-                title = urlObj.pathname.slice(1);
-            } else {
-                title = urlObj.searchParams.get('v') || 'Untitled video';
+            console.warn(`YouTube oEmbed failed (${oembedRes.status}), trying NoEmbed fallback...`);
+            try {
+                const noembedUrl = `https://noembed.com/embed?url=${encodeURIComponent(videoUrl)}`;
+                const noembedRes = await fetch(noembedUrl);
+                if (noembedRes.ok) {
+                    const noembedData = await noembedRes.json();
+                    if (noembedData.title) {
+                        title = noembedData.title;
+                        console.log(`Fetched title via NoEmbed: ${title}`);
+                    }
+                }
+            } catch (err) {
+                console.error('NoEmbed fallback failed:', err.message);
             }
         }
     } catch (e) {
-        console.error('oEmbed fetch failed:', e.message);
-        // Still allow adding, but with fallback title
-        title = videoUrl.split('v=')[1] || 'ID parsed from URL';
+        console.error('Title fetch failed:', e.message);
+        // Keep fallback title
     }
 
-    const videoObject = { url: videoUrl, title: title };
+    const videoObject = { type: 'youtube', url: videoUrl, title: title, id: videoId };
     queue.push(videoObject);
     console.log(`Added to queue (requester: ${req.ip}): ${title}`);
 
