@@ -1,6 +1,6 @@
-# 🎬 LAN YouTube Jukebox
+# 🎬 LAN Jukebox
 
-A web application that allows LAN party guests to add YouTube videos to a shared playback queue. The host machine (identified by IP address) automatically plays the videos in sequence.
+A web application that allows LAN party guests to add YouTube videos and Jellyfin music to a shared playback queue. The host machine (identified by IP address) automatically plays the content in sequence.
 
 - Utilizes [node.js](https://nodejs.org) (`npm` and `node` commands)
 - Install easily using [Docker](https://www.docker.com/)
@@ -13,8 +13,9 @@ A web application that allows LAN party guests to add YouTube videos to a shared
 
 ## ✨ Features
 
-- 🎵 **Automatic playback** - Host machine plays videos in order
-- 🚫 **Embed validation** - Blocks non-embeddable videos at submission time
+- 🎵 **Automatic playback** - Host machine plays videos and music in order
+- 🎶 **Jellyfin integration** - Stream music from your Jellyfin server with search and random song
+- 🚫 **Embed validation** - Blocks non-embeddable YouTube videos at submission time
 - ⏭️ **Auto-skip** - Automatically skips videos that fail to start within 10 seconds
 - ❌ **Clear error messages** - Displays YouTube error codes with explanations
 - 🔒 **IP-based authentication** - Only the host can control playback
@@ -142,24 +143,27 @@ Pull and run the pre-built image directly from [Docker Hub](https://hub.docker.c
 
 ## 🎮 Usage
 
-1. **On host machine**: Press "START PLAYER" to initialize the player
-2. **Anyone can**: Add YouTube links to the queue
-3. **Host can**: Skip videos and remove videos from the queue
+1. **On host machine**: The player initializes automatically when items are in the queue
+2. **Anyone can**: Add YouTube links or Jellyfin songs to the queue
+3. **Host can**: Skip videos, pause/play, and control playback
+4. **Jellyfin**: Connect to your Jellyfin server to search or add random songs
 
 ## 🛠️ Tech Stack
 
 - **Backend**: Node.js, Express
-- **Frontend**: Vanilla JavaScript, YouTube IFrame API
-- **Validation**: YouTube oEmbed API
+- **Frontend**: Vanilla JavaScript, YouTube IFrame API, HTML5 Audio
+- **Integrations**: YouTube oEmbed API, Jellyfin API
 - **Container**: Docker
 
 ## 📝 API Endpoints
 
 - `GET /api/status` - Returns whether requester is host or guest
-- `POST /api/add` - Add video to queue (all users)
+- `POST /api/add` - Add video/item to queue (all users)
 - `POST /api/next` - Get next video (host only)
 - `POST /api/delete` - Remove video from queue (host only)
-- `GET /api/queue` - Get current queue (all users)
+- `GET /api/queue` - Get current queue and currently playing item (all users)
+- `POST /api/jellyfin/proxy` - Proxy requests to Jellyfin server (CORS bypass)
+- `GET /api/jellyfin/image-proxy` - Proxy Jellyfin album art images
 
 ## 🔧 Configuration
 
